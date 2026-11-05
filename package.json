@@ -1,0 +1,22 @@
+{
+  "name": "craft-overlay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Path of Exile 2 overlay helper (MVP: item text parser)",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "parse": "tsx src/cli.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "allowScripts": [
+    "esbuild"
+  ],
+  "devDependencies": {
+    "@types/node": "*",
+    "tsx": "*",
+    "typescript": "*",
+    "vitest": "*"
+  }
+}
