@@ -379,9 +379,15 @@ result.addEventListener('click', (event) => {
   if (target) void copyJson(target);
 });
 
-if (window.craft?.onHotkey) {
-  window.craft.onHotkey(() => {
-    void pasteFromClipboard();
+if (window.craft?.onCapture) {
+  window.craft.onCapture((text) => {
+    if (!text) {
+      setStatus('Не удалось скопировать предмет. Наведи курсор на предмет в игре и повтори.');
+      return;
+    }
+    textarea.value = text;
+    render();
+    textarea.focus();
   });
 }
 

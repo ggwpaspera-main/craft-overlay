@@ -5,7 +5,7 @@ declare global {
     craft: {
       readClipboard(): Promise<string>;
       writeClipboard(text: string): Promise<void>;
-      onHotkey(callback: () => void): () => void;
+      onCapture(callback: (text: string | null) => void): () => void;
     };
   }
 }
