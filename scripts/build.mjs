@@ -45,7 +45,19 @@ await build({
   target: 'chrome120',
 });
 
+// Overlay renderer — отдельное прозрачное окно поверх игры.
+await build({
+  ...common,
+  entryPoints: ['src/renderer/src/overlay.ts'],
+  outfile: `${outDir}/renderer/overlay.js`,
+  platform: 'browser',
+  format: 'iife',
+  target: 'chrome120',
+});
+
 await cp('src/renderer/index.html', `${outDir}/renderer/index.html`);
 await cp('src/renderer/src/style.css', `${outDir}/renderer/style.css`);
+await cp('src/renderer/overlay.html', `${outDir}/renderer/overlay.html`);
+await cp('src/renderer/src/overlay.css', `${outDir}/renderer/overlay.css`);
 
 console.log('Build complete: out/');

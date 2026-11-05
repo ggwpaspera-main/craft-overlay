@@ -1,9 +1,13 @@
-import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, screen, shell } from 'electron';
 import { execFile } from 'node:child_process';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
-const TOGGLE_HOTKEY = 'Alt+Shift+D';
+const CAPTURE_HOTKEY = 'Alt+F';
+const HIDE_OVERLAY_HOTKEY = 'Alt+Shift+F';
+
+const OVERLAY_WIDTH = 480;
+const OVERLAY_MAX_HEIGHT = 760;
 
 const execFileAsync = promisify(execFile);
 
@@ -34,12 +38,15 @@ Start-Sleep -Milliseconds 20
 [CraftOverlayKeyboard]::keybd_event(0x11, 0, 2, [UIntPtr]::Zero)
 `;
 
+let mainWindow: BrowserWindow | null = null;
+let overlayWindow: BrowserWindow | null = null;
+let overlayReady: Promise<void> | null = null;
 let captureInProgress = false;
 
 app.setAppUserModelId('com.craftoverlay.app');
 
-function createWindow(): void {
-  const window = new BrowserWindow({
+function createMainWindow(): void {
+  mainWindow = new BrowserWindow({
     width: 1080,
     height: 840,
     minWidth: 780,
@@ -55,21 +62,96 @@ function createWindow(): void {
     },
   });
 
-  window.setMenuBarVisibility(false);
-  window.loadFile(join(__dirname, 'renderer/index.html'));
+  mainWindow.setMenuBarVisibility(false);
+  mainWindow.loadFile(join(__dirname, 'renderer/index.html'));
 
-  window.webContents.setWindowOpenHandler(({ url }) => {
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url);
     return { action: 'deny' };
   });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 }
 
-function revealWindow(): void {
-  const [window] = BrowserWindow.getAllWindows();
-  if (!window) return;
-  if (window.isMinimized()) window.restore();
-  if (!window.isVisible()) window.show();
-  window.focus();
+function createOverlayWindow(): void {
+  overlayWindow = new BrowserWindow({
+    width: OVERLAY_WIDTH,
+    height: OVERLAY_MAX_HEIGHT,
+    show: false,
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    focusable: false,
+    hasShadow: false,
+    alwaysOnTop: false,
+    type: 'toolbar',
+    roundedCorners: false,
+    autoHideMenuBar: true,
+    title: 'Craft Overlay',
+    webPreferences: {
+      preload: join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+      backgroundThrottling: false,
+    },
+  });
+
+  overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+  overlayWindow.setIgnoreMouseEvents(true, { forward: true });
+  overlayWindow.setMenuBarVisibility(false);
+  overlayWindow.loadFile(join(__dirname, 'renderer/overlay.html'));
+
+  overlayReady = new Promise((resolve) => {
+    overlayWindow?.webContents.once('did-finish-load', () => resolve());
+  });
+
+  overlayWindow.on('closed', () => {
+    overlayWindow = null;
+    overlayReady = null;
+  });
+}
+
+async function ensureOverlayWindow(): Promise<BrowserWindow> {
+  if (!overlayWindow) createOverlayWindow();
+  if (!overlayWindow) throw new Error('Не удалось создать окно оверлея');
+  await overlayReady;
+  return overlayWindow;
+}
+
+function positionOverlay(window: BrowserWindow): void {
+  const cursor = screen.getCursorScreenPoint();
+  const display = screen.getDisplayNearestPoint(cursor);
+  const { workArea } = display;
+
+  const height = Math.min(OVERLAY_MAX_HEIGHT, workArea.height - 24);
+
+  let x = cursor.x + 24;
+  if (x + OVERLAY_WIDTH > workArea.x + workArea.width) {
+    x = cursor.x - OVERLAY_WIDTH - 24;
+  }
+  x = Math.max(workArea.x + 8, Math.min(x, workArea.x + workArea.width - OVERLAY_WIDTH - 8));
+
+  let y = cursor.y - 48;
+  if (y + height > workArea.y + workArea.height) {
+    y = workArea.y + workArea.height - height - 8;
+  }
+  y = Math.max(workArea.y + 8, y);
+
+  window.setBounds({
+    x: Math.round(x),
+    y: Math.round(y),
+    width: OVERLAY_WIDTH,
+    height: Math.round(height),
+  });
 }
 
 function looksLikeItem(text: string): boolean {
@@ -90,14 +172,7 @@ async function sendAdvancedCopy(): Promise<void> {
   const encoded = Buffer.from(SEND_ADVANCED_COPY_SCRIPT, 'utf16le').toString('base64');
   await execFileAsync(
     'powershell.exe',
-    [
-      '-NoProfile',
-      '-NonInteractive',
-      '-WindowStyle',
-      'Hidden',
-      '-EncodedCommand',
-      encoded,
-    ],
+    ['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-EncodedCommand', encoded],
     { windowsHide: true, timeout: 5000 },
   );
 }
@@ -117,6 +192,20 @@ async function waitForCopiedItem(previous: string): Promise<string | null> {
   return looksLikeItem(current) && current !== previous ? current : null;
 }
 
+async function showOverlay(text: string | null): Promise<void> {
+  const window = await ensureOverlayWindow();
+  positionOverlay(window);
+  window.webContents.send('capture:result', text);
+
+  if (window.isVisible()) {
+    window.moveTop();
+  } else {
+    window.showInactive();
+  }
+
+  window.setAlwaysOnTop(true, 'screen-saver');
+}
+
 async function captureItemFromGame(): Promise<void> {
   if (captureInProgress) return;
   captureInProgress = true;
@@ -131,14 +220,12 @@ async function captureItemFromGame(): Promise<void> {
     const text = await waitForCopiedItem(previous);
     console.log(`[capture] clipboard: ${text ? `${text.length} chars` : 'no item'}`);
 
-    revealWindow();
-    const [window] = BrowserWindow.getAllWindows();
-    window?.webContents.send('capture:result', text);
+    mainWindow?.webContents.send('capture:result', text);
+    await showOverlay(text);
   } catch (error) {
     console.error('Не удалось скопировать предмет из игры:', error);
-    revealWindow();
-    const [window] = BrowserWindow.getAllWindows();
-    window?.webContents.send('capture:result', null);
+    mainWindow?.webContents.send('capture:result', null);
+    await showOverlay(null);
   } finally {
     captureInProgress = false;
   }
@@ -150,19 +237,32 @@ app.whenReady().then(() => {
     if (typeof text === 'string') clipboard.writeText(text);
   });
 
-  createWindow();
+  createMainWindow();
+  createOverlayWindow();
 
-  const registered = globalShortcut.register(TOGGLE_HOTKEY, () => {
+  const captureRegistered = globalShortcut.register(CAPTURE_HOTKEY, () => {
     void captureItemFromGame();
   });
-  if (!registered) {
-    console.warn(`Не удалось зарегистрировать глобальный хоткей ${TOGGLE_HOTKEY}`);
+  if (!captureRegistered) {
+    console.warn(`Не удалось зарегистрировать глобальный хоткей ${CAPTURE_HOTKEY}`);
   } else {
-    console.log(`[hotkey] registered ${TOGGLE_HOTKEY}`);
+    console.log(`[hotkey] registered ${CAPTURE_HOTKEY}`);
+  }
+
+  const hideRegistered = globalShortcut.register(HIDE_OVERLAY_HOTKEY, () => {
+    console.log('[hotkey] hide pressed');
+    const wasVisible = overlayWindow?.isVisible();
+    overlayWindow?.hide();
+    console.log(`[overlay] hide: ${wasVisible} -> ${overlayWindow?.isVisible()}`);
+  });
+  if (!hideRegistered) {
+    console.warn(`Не удалось зарегистрировать глобальный хоткей ${HIDE_OVERLAY_HOTKEY}`);
+  } else {
+    console.log(`[hotkey] registered ${HIDE_OVERLAY_HOTKEY}`);
   }
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
   });
 });
 

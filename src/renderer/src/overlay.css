@@ -1,0 +1,442 @@
+/**
+ * Стили отдельного окна-оверлея.
+ *
+ * Окно прозрачное и always-on-top, поэтому фон рисует только .ov-panel.
+ * Все классы имеют префикс ov-, чтобы не конфликтовать с основным окном.
+ * Никаких внешних шрифтов и картинок — только системный стек.
+ */
+
+:root {
+  --ov-bg: rgba(10, 12, 17, 0.92);
+  --ov-panel-border: rgba(126, 140, 170, 0.32);
+  --ov-text: #e9e7df;
+  --ov-muted: #8f98aa;
+  --ov-soft: #c6ccd8;
+  --ov-accent: #d8b45a;
+  --ov-accent-2: #7aa7ff;
+  --ov-danger: #e06c75;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+}
+
+body {
+  color: var(--ov-text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 12.5px;
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.ov-root {
+  height: 100%;
+  padding: 10px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: stretch;
+}
+
+/* Панель — единственный непрозрачный элемент окна. */
+.ov-panel {
+  width: 100%;
+  max-height: min(760px, calc(100vh - 20px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--ov-panel-border);
+  border-radius: 12px;
+  background: var(--ov-bg);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+  scrollbar-width: thin;
+  scrollbar-color: #343b4c transparent;
+}
+
+.ov-panel.ov-panel-error {
+  border-color: rgba(224, 108, 117, 0.42);
+}
+
+.ov-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ov-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ov-panel::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: #343b4c;
+  background-clip: padding-box;
+}
+
+.ov-panel::-webkit-scrollbar-thumb:hover {
+  background: #46506a;
+  background-clip: padding-box;
+}
+
+/* ── Шапка карточки ─────────────────────────────────────────────── */
+
+.ov-head {
+  padding: 12px 13px 10px;
+  border-bottom: 1px solid rgba(126, 140, 170, 0.18);
+}
+
+.ov-rarity {
+  margin-bottom: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ov-name {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: 0.01em;
+  overflow-wrap: break-word;
+}
+
+.ov-base {
+  margin-top: 3px;
+  color: var(--ov-muted);
+  font-size: 12px;
+  overflow-wrap: break-word;
+}
+
+.ov-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 7px;
+}
+
+.ov-chip {
+  padding: 2px 6px;
+  border: 1px solid rgba(126, 140, 170, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ov-soft);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.ov-chip.ov-flag {
+  border-color: rgba(224, 108, 117, 0.35);
+  background: rgba(224, 108, 117, 0.07);
+  color: #f0a6ac;
+}
+
+/* Цвета редкости — и для плашки, и для имени. */
+.ov-rarity-normal {
+  color: #d5d5d5;
+}
+
+.ov-rarity-magic {
+  color: #9db4ff;
+}
+
+.ov-rarity-rare {
+  color: #e8c86a;
+}
+
+.ov-rarity-unique {
+  color: #c084fc;
+}
+
+.ov-rarity-gem {
+  color: #67e8f9;
+}
+
+.ov-rarity-currency {
+  color: #fbbf24;
+}
+
+.ov-rarity-unknown {
+  color: var(--ov-muted);
+}
+
+/* ── Тело карточки ─────────────────────────────────────────────── */
+
+.ov-body {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 10px 13px 12px;
+}
+
+.ov-block {
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid rgba(126, 140, 170, 0.16);
+  border-radius: 8px;
+  background: rgba(11, 13, 18, 0.35);
+}
+
+.ov-block-title {
+  margin: 0 0 6px;
+  color: var(--ov-muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ov-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.ov-kv {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ov-kv-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.ov-kv-label {
+  color: #b9c0ce;
+}
+
+.ov-kv-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.ov-mini {
+  margin-left: 4px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(122, 167, 255, 0.12);
+  color: #a9c4ff;
+  font-size: 9px;
+}
+
+.ov-mini.ov-mini-bad {
+  background: rgba(224, 108, 117, 0.14);
+  color: #f3aeb4;
+}
+
+/* ── Моды ──────────────────────────────────────────────────────── */
+
+.ov-mods {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ov-mod {
+  min-width: 0;
+  padding: 6px 8px 6px 9px;
+  border-left: 2px solid #46506a;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.022);
+}
+
+.ov-mod-explicit {
+  border-left-color: #46506a;
+}
+
+.ov-mod-implicit {
+  border-left-color: #8b7bd8;
+}
+
+.ov-mod-unique {
+  border-left-color: #c084fc;
+}
+
+.ov-mod-enchantment {
+  border-left-color: #5fb6a2;
+}
+
+.ov-mod-corrupted {
+  border-left-color: #d97757;
+}
+
+.ov-mod-rune {
+  border-left-color: var(--ov-accent);
+}
+
+.ov-mod-unknown {
+  border-left-color: #555f74;
+}
+
+.ov-mod-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+  margin-bottom: 4px;
+}
+
+.ov-mod-source {
+  color: var(--ov-muted);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ov-affix {
+  color: #eef0f4;
+  font-size: 12px;
+  overflow-wrap: break-word;
+}
+
+.ov-tag {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #aeb7c8;
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+
+.ov-tag.ov-tag-tier {
+  background: rgba(216, 180, 90, 0.13);
+  color: #e8c86a;
+}
+
+.ov-tag.ov-tag-annotation {
+  background: rgba(216, 180, 90, 0.18);
+  color: #f0d486;
+}
+
+.ov-tag.ov-tag-state {
+  background: rgba(216, 120, 90, 0.13);
+  color: #e8a58a;
+}
+
+/* ── Строки статов ─────────────────────────────────────────────── */
+
+.ov-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ov-stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.ov-stat-text {
+  min-width: 0;
+  color: #dfe3ea;
+  overflow-wrap: break-word;
+}
+
+.ov-roll {
+  color: var(--ov-accent-2);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ov-stat-empty {
+  color: var(--ov-muted);
+  font-size: 11.5px;
+}
+
+/* ── Лор и описание ────────────────────────────────────────────── */
+
+.ov-flavour {
+  margin: 0;
+  padding: 6px 0 0 8px;
+  border-left: 2px solid #3a4254;
+  color: #9aa3b4;
+  font-size: 11.5px;
+  font-style: italic;
+  line-height: 1.45;
+  overflow-wrap: break-word;
+}
+
+.ov-description {
+  color: #b6bdca;
+  font-size: 11.5px;
+  line-height: 1.42;
+  overflow-wrap: break-word;
+}
+
+/* ── Пустое состояние и ошибка захвата ─────────────────────────── */
+
+.ov-state {
+  padding: 14px 13px;
+}
+
+.ov-state-title {
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ov-state-text {
+  color: var(--ov-muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.ov-state-hint {
+  margin-top: 4px;
+}
+
+.ov-error .ov-state-title {
+  color: #f3b6bb;
+}
+
+.ov-reason {
+  margin-top: 6px;
+  color: #f3b6bb;
+  font-size: 11.5px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.ov-kbd {
+  padding: 1px 5px;
+  border: 1px solid rgba(126, 140, 170, 0.35);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #d6dbe4;
+  font-family: inherit;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .ov-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ov-name {
+    font-size: 16px;
+  }
+}
