@@ -38,7 +38,20 @@ export function parseAdvancedHeader(
   let inner = trimmed.slice(1, -1).trim();
   const dashIndex = inner.indexOf(EM_DASH);
   let head = dashIndex >= 0 ? inner.slice(0, dashIndex).trim() : inner;
-  const tagsRaw = dashIndex >= 0 ? inner.slice(dashIndex + 1).trim() : '';
+
+  let tagsRaw = '';
+  let annotation: string | undefined;
+  if (dashIndex >= 0) {
+    const afterDash = inner.slice(dashIndex + 1).trim();
+    const secondDashIndex = afterDash.indexOf(EM_DASH);
+    if (secondDashIndex >= 0) {
+      tagsRaw = afterDash.slice(0, secondDashIndex).trim();
+      annotation = afterDash.slice(secondDashIndex + 1).trim() || undefined;
+    } else {
+      tagsRaw = afterDash;
+    }
+  }
+
   const tags = tagsRaw
     ? tagsRaw.split(',').map((tag) => tag.trim()).filter(Boolean)
     : [];
@@ -46,7 +59,7 @@ export function parseAdvancedHeader(
   let affixName: string | undefined;
   head = head
     .replace(/"([^"]*)"/g, (_full, name: string) => {
-      if (affixName === undefined) affixName = name;
+      if (affixName === undefined && name !== '') affixName = name;
       return '';
     })
     .trim();
@@ -94,6 +107,7 @@ export function parseAdvancedHeader(
     headerRaw: trimmed,
     ...(affixName !== undefined ? { affixName } : {}),
     ...(tier !== undefined ? { tier } : {}),
+    ...(annotation !== undefined ? { annotation } : {}),
     tags,
     states,
     lines: [],

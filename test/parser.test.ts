@@ -161,6 +161,182 @@ describe('parseItemText: русский advanced-copy', () => {
     expect(item.unknownLines).toEqual([]);
   });
 
+  it('разбирает редкий амулет с качеством чародейских свойств', () => {
+    const item = parseFixture('rare-amulet-quality-advanced.txt');
+
+    expect(item.itemClass).toBe('Амулеты');
+    expect(item.category).toBe('jewellery');
+    expect(item.rarity).toBe('rare');
+    expect(item.name).toBe('Громадный медальон');
+    expect(item.baseType).toBe('Амулет отсутствия');
+    expect(item.quality).toBe(40);
+    expect(item.qualityType).toBe('чародейские свойства');
+    expect(item.requirements).toEqual([{ key: 'level', value: 60 }]);
+    expect(item.flags.sanctified).toBe(true);
+    expect(item.flags.fractured).toBe(true);
+    expect(item.grantedSkills).toHaveLength(1);
+    expect(item.grantedSkills[0] ?? '').toContain('Сотворение чар при кувырке');
+    expect(item.flavourText?.[0] ?? '').toContain('Мы постигаем вечное');
+
+    const fractured = groupNamed(item, 'Графский');
+    expect(fractured.states).toContain('fractured');
+
+    const crafted = groupNamed(item, 'Сущностный');
+    expect(crafted.states).toContain('crafted');
+
+    const castSpeed = groupNamed(item, 'чародея');
+    expect(castSpeed.tags).toEqual(['Чародейский', 'Камень']);
+    expect(castSpeed.annotation).toBe('40% увеличение');
+
+    const desecrated = groupNamed(item, 'Ксофа');
+    expect(desecrated.states).toContain('desecrated');
+    expect(desecrated.annotation).toBe('40% увеличение');
+
+    const implicit = item.modifiers.find((modifier) => modifier.source === 'implicit');
+    expect(implicit?.lines).toHaveLength(2);
+    expect(implicit?.lines[0]?.values[0]).toEqual({ raw: '-1', rolled: -1 });
+
+    expect(item.unknownLines).toEqual([]);
+  });
+
+  it('разбирает уникальный жезл', () => {
+    const item = parseFixture('unique-wand-advanced.txt');
+
+    expect(item.itemClass).toBe('Жезлы');
+    expect(item.category).toBe('weapon');
+    expect(item.subtype).toBe('wand');
+    expect(item.rarity).toBe('unique');
+    expect(item.name).toBe('Клич искателя рун');
+    expect(item.baseType).toBe('Рунномастерская руническая вилка');
+    expect(item.itemLevel).toBe(86);
+    expect(item.sockets).toEqual(['S', 'S', 'S', 'S', 'S']);
+    expect(item.requirements).toEqual([
+      { key: 'level', value: 65 },
+      { key: 'int', value: 88, augmented: true },
+    ]);
+    expect(item.runes).toHaveLength(4);
+    expect(item.grantedSkills[0] ?? '').toContain('Звёздный вердикт');
+    expect(item.flags.doubleCorrupted).toBe(true);
+
+    const corrupted = item.modifiers.filter((modifier) => modifier.source === 'corrupted');
+    expect(corrupted).toHaveLength(2);
+    expect(corrupted[0]?.tags).toEqual(['Мана']);
+
+    const implicit = item.modifiers.find((modifier) => modifier.source === 'implicit');
+    expect(implicit?.tags).toEqual(['Чародейский']);
+
+    const unique = item.modifiers.filter((modifier) => modifier.source === 'unique');
+    expect(unique).toHaveLength(2);
+    expect(unique[0]?.lines[0]?.fixedValue).toBe(true);
+    expect(unique[1]?.lines[0]?.text).toBe('200% усиление эффекта размещенных рун');
+    expect(item.flavourText).toHaveLength(4);
+    expect(item.unknownLines).toEqual([]);
+  });
+
+  it('разбирает редкий самоцвет', () => {
+    const item = parseFixture('rare-jewel-advanced.txt');
+
+    expect(item.itemClass).toBe('Самоцветы');
+    expect(item.category).toBe('jewel');
+    expect(item.name).toBe('Гипнотический губитель');
+    expect(item.baseType).toBe('Сапфир');
+    expect(item.itemLevel).toBe(70);
+
+    const crafted = item.modifiers.find(
+      (modifier) => modifier.states.includes('crafted') && modifier.affixName === undefined,
+    );
+    expect(crafted).toBeDefined();
+    expect(crafted?.lines[0]?.fixedValue).toBe(true);
+
+    const suffix = groupNamed(item, 'истребления');
+    expect(suffix.tags).toEqual(['Критический']);
+    expect(suffix.annotation).toBe('50% увеличение');
+
+    expect(item.description?.[0] ?? '').toContain('Поместите в доступное гнездо');
+    expect(item.unknownLines).toEqual([]);
+  });
+
+  it('разбирает обычный нательный доспех', () => {
+    const item = parseFixture('normal-body-armour-advanced.txt');
+
+    expect(item.itemClass).toBe('Нательные доспехи');
+    expect(item.category).toBe('armour');
+    expect(item.subtype).toBe('bodyArmour');
+    expect(item.rarity).toBe('normal');
+    expect(item.name).toBeUndefined();
+    expect(item.baseType).toBe('Образцовый Дублёный плащ');
+    expect(item.itemLevel).toBe(81);
+    expect(item.sockets).toEqual(['S', 'S', 'S']);
+
+    expect(item.properties).toEqual([
+      { key: 'evasion', label: 'Уклонение', values: ['285'] },
+      { key: 'energyShield', label: 'Энергетический щит', values: ['87'] },
+    ]);
+    expect(item.requirements).toEqual([
+      { key: 'level', value: 65 },
+      { key: 'dex', value: 62, augmented: true },
+      { key: 'int', value: 62, augmented: true },
+    ]);
+    expect(item.unknownLines).toEqual([]);
+  });
+
+  it('разбирает редкое кольцо', () => {
+    const item = parseFixture('rare-ring-advanced.txt');
+
+    expect(item.itemClass).toBe('Кольца');
+    expect(item.category).toBe('jewellery');
+    expect(item.subtype).toBe('ring');
+    expect(item.name).toBe('Разумное око');
+    expect(item.baseType).toBe('Золотое кольцо');
+    expect(item.quality).toBe(40);
+    expect(item.qualityType).toBe('чародейские свойства');
+    expect(item.requirements).toEqual([{ key: 'level', value: 64 }]);
+
+    const implicit = item.modifiers.find((modifier) => modifier.source === 'implicit');
+    expect(implicit?.tags).toEqual(['Выпадение']);
+
+    const occult = groupNamed(item, 'Оккультное');
+    expect(occult.annotation).toBe('40% увеличение');
+    expect(occult.tier).toBeUndefined();
+
+    const flame = groupNamed(item, 'Огнедышащее');
+    expect(flame.states).toContain('desecrated');
+    expect(item.unknownLines).toEqual([]);
+  });
+
+  it('разбирает волшебный пояс', () => {
+    const item = parseFixture('magic-belt-advanced.txt');
+
+    expect(item.itemClass).toBe('Пояса');
+    expect(item.category).toBe('jewellery');
+    expect(item.subtype).toBe('belt');
+    expect(item.rarity).toBe('magic');
+    expect(item.name).toBe('Мощный Матерчатый пояс борца');
+    expect(item.baseType).toBeUndefined();
+    expect(item.requirements).toEqual([{ key: 'level', value: 30 }]);
+
+    const implicits = item.modifiers.filter((modifier) => modifier.source === 'implicit');
+    expect(implicits).toHaveLength(2);
+    expect(implicits[0]?.tags).toEqual(['Мана']);
+    expect(implicits[1]?.tags).toEqual(['Оберег']);
+    expect(item.unknownLines).toEqual([]);
+  });
+
+  it('разбирает редкую плитку', () => {
+    const item = parseFixture('rare-tablet-advanced.txt');
+
+    expect(item.itemClass).toBe('Плитки');
+    expect(item.category).toBe('tablet');
+    expect(item.name).toBe('Тревожный план');
+    expect(item.baseType).toBe('Заражённая плитка');
+    expect(item.itemLevel).toBe(79);
+
+    const implicit = item.modifiers.find((modifier) => modifier.source === 'implicit');
+    expect(implicit?.lines).toHaveLength(2);
+    expect(item.description?.[0] ?? '').toContain('Машине картоходца');
+    expect(item.unknownLines).toEqual([]);
+  });
+
   it('не падает на пустом, мусорном и обрезанном тексте', () => {
     expect(parseItemText('').ok).toBe(false);
     expect(parseItemText('просто текст\nбез предмета').ok).toBe(false);
@@ -170,6 +346,13 @@ describe('parseItemText: русский advanced-copy', () => {
       'rare-boots-advanced.txt',
       'waystone-advanced.txt',
       'unique-amulet-advanced.txt',
+      'rare-amulet-quality-advanced.txt',
+      'unique-wand-advanced.txt',
+      'rare-jewel-advanced.txt',
+      'normal-body-armour-advanced.txt',
+      'rare-ring-advanced.txt',
+      'magic-belt-advanced.txt',
+      'rare-tablet-advanced.txt',
     ]) {
       const raw = fixture(name);
       const truncated = raw.slice(0, Math.floor(raw.length / 2));

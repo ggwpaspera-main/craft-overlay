@@ -33,12 +33,13 @@ export type Rarity =
   | 'currency'
   | 'unknown';
 
-/** Откуда взялся мод: обычный явный, имплисит, уникальный, энчант или руна. */
+/** Откуда взялся мод: явный, имплисит, уникальный, энчант, коррапт или руна. */
 export type ModifierSource =
   | 'explicit'
   | 'implicit'
   | 'unique'
   | 'enchantment'
+  | 'corrupted'
   | 'rune'
   | 'unknown';
 
@@ -87,6 +88,8 @@ export interface ModifierGroup {
   tier?: number;
   /** Локализованные теги, как в тексте. */
   tags: string[];
+  /** Дополнительная пометка после второго тире: "40% увеличение". */
+  annotation?: string;
   states: ModifierState[];
   lines: StatLine[];
 }
@@ -107,10 +110,13 @@ export interface Requirement {
   value: number;
   /** Маркер невыполненного требования, если встретился. */
   unmet?: boolean;
+  /** Маркер "(augmented)" — значение изменено модами/качеством. */
+  augmented?: boolean;
 }
 
 export interface ItemFlags {
   corrupted?: boolean;
+  doubleCorrupted?: boolean;
   fractured?: boolean;
   desecrated?: boolean;
   sanctified?: boolean;
@@ -139,6 +145,8 @@ export interface ParsedItem {
 
   itemLevel?: number;
   quality?: number;
+  /** Тип качества: "чародейские свойства" и т.п. */
+  qualityType?: string;
   /** Тир путевого камня из базы "(Ур. 15)". */
   waystoneTier?: number;
   stackSize?: number;
@@ -147,6 +155,9 @@ export interface ParsedItem {
   requirements: Requirement[];
   /** Токены из "Гнезда: S S". */
   sockets: string[];
+
+  /** Строки "Дарует умение: ...". */
+  grantedSkills: string[];
 
   modifiers: ModifierGroup[];
   /** Руны: строки с "(rune)". */

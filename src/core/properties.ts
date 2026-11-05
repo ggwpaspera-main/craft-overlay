@@ -4,6 +4,7 @@ import type { LocaleDictionary } from './locale/types';
 export interface PropertyParseResult {
   property?: ItemProperty;
   quality?: number;
+  qualityType?: string;
   warning?: string;
 }
 
@@ -34,12 +35,16 @@ export function parsePropertyLine(
     augmented = true;
   }
 
-  if (label === dict.labels.quality) {
+  if (label === dict.labels.quality || label.startsWith(`${dict.labels.quality} (`)) {
     const quality = parseNumericValue(value);
     if (quality === null) {
       return { warning: `Не удалось разобрать качество: "${value}"` };
     }
-    return { quality };
+    const typeMatch = label.match(/\(([^)]+)\)/);
+    return {
+      quality,
+      ...(typeMatch?.[1] ? { qualityType: typeMatch[1].trim() } : {}),
+    };
   }
 
   const key = dict.properties[label];
@@ -72,13 +77,14 @@ export function parseRequirementsLine(
     const token = rawToken.trim();
     if (!token) continue;
 
-    const unmetMarker = `\\(${escapeRegExp(dict.markers.unmet)}\\)`;
-    const valueFirst = new RegExp(`^(\\d+)(?:\\s+${unmetMarker})?\\s+(.+)$`).exec(token);
-    const labelFirst = new RegExp(`^(.+?)\\s+(\\d+)(?:\\s+${unmetMarker})?$`).exec(token);
+    const markerPattern = `\\((?:${escapeRegExp(dict.markers.augmented)}|${escapeRegExp(dict.markers.unmet)})\\)`;
+    const valueFirst = new RegExp(`^(\\d+)(?:\\s+${markerPattern})?\\s+(.+)$`).exec(token);
+    const labelFirst = new RegExp(`^(.+?)\\s+(\\d+)(?:\\s+${markerPattern})?$`).exec(token);
 
     let key: Requirement['key'] = 'unknown';
     let value = 0;
     let unmet = false;
+    let augmented = false;
 
     if (valueFirst) {
       value = Number(valueFirst[1]);
@@ -91,12 +97,18 @@ export function parseRequirementsLine(
       continue;
     }
 
-    unmet = new RegExp(`${unmetMarker}\\s*$`).test(token);
+    unmet = new RegExp(`\\(${escapeRegExp(dict.markers.unmet)}\\)`).test(token);
+    augmented = new RegExp(`\\(${escapeRegExp(dict.markers.augmented)}\\)`).test(token);
     if (key === 'unknown') {
       warnings.push(`Неизвестное требование: "${token}"`);
     }
 
-    requirements.push({ key, value, ...(unmet ? { unmet: true } : {}) });
+    requirements.push({
+      key,
+      value,
+      ...(unmet ? { unmet: true } : {}),
+      ...(augmented ? { augmented: true } : {}),
+    });
   }
 
   return { requirements, warnings };

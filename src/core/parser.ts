@@ -27,7 +27,7 @@ import {
 } from './modifiers';
 import { parseFlagLine } from './flags';
 
-export const PARSER_VERSION = '0.1.0';
+export const PARSER_VERSION = '0.2.0';
 
 /**
  * Разбирает текст предмета PoE2.
@@ -68,6 +68,7 @@ export function parseItemText(raw: string, locale: Locale = 'ru'): ParseResult {
     properties: [],
     requirements: [],
     sockets: [],
+    grantedSkills: [],
     modifiers: [],
     runes: [],
     flags: {},
@@ -112,6 +113,20 @@ export function parseItemText(raw: string, locale: Locale = 'ru'): ParseResult {
       continue;
     }
 
+    const grantedPrefix = `${dict.labels.grantedSkill}:`;
+    if (first.startsWith(grantedPrefix)) {
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        if (trimmed.startsWith(grantedPrefix)) {
+          item.grantedSkills.push(trimmed.slice(grantedPrefix.length).trim());
+        } else {
+          item.unknownLines.push(trimmed);
+        }
+      }
+      continue;
+    }
+
     if (lines.some((line) => isAdvancedHeader(line))) {
       parseModifiersSection(lines, item, dict);
       continue;
@@ -121,7 +136,10 @@ export function parseItemText(raw: string, locale: Locale = 'ru'): ParseResult {
       for (const line of lines) {
         const parsed = parsePropertyLine(line, dict);
         if (!parsed) continue;
-        if (parsed.quality !== undefined) item.quality = parsed.quality;
+        if (parsed.quality !== undefined) {
+          item.quality = parsed.quality;
+          if (parsed.qualityType) item.qualityType = parsed.qualityType;
+        }
         if (parsed.property) item.properties.push(parsed.property);
         if (parsed.warning) item.warnings.push(parsed.warning);
       }
@@ -139,6 +157,16 @@ export function parseItemText(raw: string, locale: Locale = 'ru'): ParseResult {
     if (lines.every((line) => isRuneLine(line, dict))) {
       for (const line of lines) {
         item.runes.push(parseStatLine(stripRuneMarker(line, dict), dict));
+      }
+      continue;
+    }
+
+    if (isProseSection(lines, dict)) {
+      const prose = lines.map((line) => line.trim()).filter(Boolean);
+      if (item.category === 'waystone' || item.category === 'tablet' || item.category === 'jewel') {
+        item.description = [...(item.description ?? []), ...prose];
+      } else {
+        item.flavourText = [...(item.flavourText ?? []), ...prose];
       }
       continue;
     }
@@ -214,6 +242,26 @@ function getDictionary(locale: Locale): LocaleDictionary {
     default:
       return ru;
   }
+}
+
+/**
+ * Секция «прозы»: лор уникальных предметов, описание джевелов/плиток/waystone.
+ * В advanced-copy такие строки не содержат чисел, двоеточий и не являются
+ * заголовками модов/флагами. В basic-copy моды тоже могут быть без чисел,
+ * поэтому эвристика используется только как запасной вариант.
+ */
+function isProseSection(lines: string[], dict: LocaleDictionary): boolean {
+  const trimmed = lines.map((line) => line.trim()).filter(Boolean);
+  if (trimmed.length === 0) return false;
+
+  return trimmed.every((line) => {
+    if (/\d/.test(line)) return false;
+    if (line.includes(':')) return false;
+    if (line.startsWith('{')) return false;
+    if (isRuneLine(line, dict)) return false;
+    if (parseFlagLine(line, dict) !== null) return false;
+    return true;
+  });
 }
 
 function fail(reason: string): ParseResult {

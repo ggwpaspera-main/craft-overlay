@@ -19,6 +19,8 @@ export interface LocaleDictionary {
     quality: string;
     stackSize: string;
     tier: string;
+    /** "Дарует умение" — строка выданного умения. */
+    grantedSkill: string;
   };
   rarities: Record<string, Rarity>;
   itemClasses: Record<string, { category: ItemCategory; subtype?: string }>;

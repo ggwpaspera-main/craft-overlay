@@ -72,7 +72,12 @@ export function parseHeader(
       warnings.push(`В заголовке ${nameLines.length} строк имени/базы — лишние пропущены`);
     }
   } else if (nameLines.length === 1) {
-    name = nameLines[0];
+    // У normal-предмета единственная строка — это база; у magic — имя с аффиксами.
+    if (rarity === 'normal') {
+      baseType = nameLines[0];
+    } else {
+      name = nameLines[0];
+    }
   }
 
   if (baseType) {

@@ -3,7 +3,7 @@ import type { LocaleDictionary } from './types';
 /**
  * Русский клиент PoE2, advanced item copy (Ctrl+Alt+C).
  *
- * Строки подтверждены четырьмя реальными образцами (fixtures/ru/*.txt).
+ * Строки подтверждены одиннадцатью реальными образцами (fixtures/ru/*.txt).
  * Всё, что не подтверждено, помечено TODO и расширяется по мере появления
  * новых образцов.
  */
@@ -19,6 +19,7 @@ export const ru: LocaleDictionary = {
     quality: 'Качество',
     stackSize: 'Размер стопки',
     tier: 'Уровень',
+    grantedSkill: 'Дарует умение',
   },
 
   rarities: {
@@ -42,6 +43,9 @@ export const ru: LocaleDictionary = {
     'Флаконы жизни': { category: 'flask', subtype: 'life' },
     'Флаконы маны': { category: 'flask', subtype: 'mana' },
     'Плитки': { category: 'tablet' },
+    'Жезлы': { category: 'weapon', subtype: 'wand' },
+    'Самоцветы': { category: 'jewel' },
+    'Нательные доспехи': { category: 'armour', subtype: 'bodyArmour' },
   },
 
   modifierKinds: {
@@ -50,16 +54,20 @@ export const ru: LocaleDictionary = {
     'Собственное свойство': { source: 'implicit', kind: 'none' },
     'Уникальное свойство': { source: 'unique', kind: 'none' },
     'Улучшение': { source: 'enchantment', kind: 'none' },
+    'Улучшение от осквернения': { source: 'corrupted', kind: 'none' },
   },
 
   modifierStates: {
     'Очернённое': 'desecrated',
     'Очернённый': 'desecrated',
     'Очернённая': 'desecrated',
+    'Расколотое': 'fractured',
+    'Ремесленное': 'crafted',
   },
 
   properties: {
     'Энергетический щит': 'energyShield',
+    'Уклонение': 'evasion',
     'Доступно возрождений': 'waystoneRevives',
     'Размер групп монстров': 'monsterPackSize',
     'Эффективность монстров': 'monsterEffectiveness',
@@ -70,13 +78,16 @@ export const ru: LocaleDictionary = {
     'Уровень': 'level',
     'Сил': 'str',
     'Лов': 'dex',
+    'Ловк': 'dex',
     'Инт': 'int',
   },
 
   flags: {
     'Осквернено': 'corrupted',
+    'Дважды осквернено': 'doubleCorrupted',
     'Расколото': 'fractured', // TODO подтвердить образцом
-    'Освящено': 'sanctified', // TODO подтвердить образцом
+    'Расколотый предмет': 'fractured',
+    'Освящено': 'sanctified',
   },
 
   markers: {
