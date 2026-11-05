@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'none'; style-src 'self'; script-src 'self';"
+    />
+    <title>Craft Overlay — PoE2</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo">CO</div>
+          <div>
+            <h1>Craft Overlay</h1>
+            <p>Path of Exile 2 · разбор предметов</p>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="paste" class="btn primary" type="button">Вставить из буфера</button>
+          <button id="clear" class="btn" type="button">Очистить</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="pane input-pane">
+          <div class="pane-head">
+            <h2>Текст предмета</h2>
+            <span class="hint">Ctrl+C или Ctrl+Alt+C в игре</span>
+          </div>
+          <textarea
+            id="item-text"
+            spellcheck="false"
+            placeholder="Скопируй предмет в игре и вставь сюда…"
+          ></textarea>
+          <p class="hint">
+            Поддерживается русский advanced-copy: моды, тиры, руны, флаги, waystone.
+          </p>
+        </section>
+
+        <section class="pane result-pane">
+          <div class="pane-head">
+            <h2>Разбор</h2>
+            <span id="status" class="status"></span>
+          </div>
+          <div id="result" class="result"></div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span>Локальный разбор · данные не отправляются в сеть</span>
+        <span>v0.2.0</span>
+      </footer>
+    </div>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

@@ -3,20 +3,57 @@
   "version": "0.1.0",
   "private": true,
   "description": "Path of Exile 2 overlay helper (MVP: item text parser)",
+  "author": "ggwpaspera-main",
   "type": "module",
+  "main": "out/main.cjs",
   "scripts": {
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "parse": "tsx src/cli.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prebuild": "npm run typecheck",
+    "build": "node scripts/build.mjs",
+    "app": "npm run build && electron .",
+    "dist": "npm run build && electron-builder --win portable",
+    "dist:dir": "npm run build && electron-builder --win dir"
   },
   "allowScripts": [
-    "esbuild"
+    "esbuild",
+    "electron"
   ],
   "devDependencies": {
     "@types/node": "*",
+    "electron": "*",
+    "electron-builder": "*",
+    "esbuild": "*",
     "tsx": "*",
     "typescript": "*",
     "vitest": "*"
+  },
+  "build": {
+    "appId": "com.craftoverlay.app",
+    "productName": "Craft Overlay",
+    "directories": {
+      "output": "release"
+    },
+    "electronDist": "node_modules/electron/dist",
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "craft-overlay-${version}.exe"
+    }
   }
 }
