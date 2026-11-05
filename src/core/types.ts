@@ -12,6 +12,7 @@ export type Locale = 'ru' | 'en';
 export type ItemCategory =
   | 'weapon'
   | 'armour'
+  | 'offhand'
   | 'jewellery'
   | 'flask'
   | 'charm'
@@ -21,6 +22,8 @@ export type ItemCategory =
   | 'rune'
   | 'waystone'
   | 'tablet'
+  | 'trap'
+  | 'relic'
   | 'quest'
   | 'unknown';
 

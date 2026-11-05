@@ -76,6 +76,41 @@ function queryRequired<T extends Element>(selector: string): T {
 }
 
 const root = queryRequired<HTMLElement>('#ov-root');
+const minimizeButton = document.querySelector<HTMLButtonElement>('#ov-minimize');
+const closeButton = document.querySelector<HTMLButtonElement>('#ov-close');
+
+minimizeButton?.addEventListener('click', () => window.craft.hideOverlay());
+closeButton?.addEventListener('click', () => window.craft.quitApp());
+
+// Ручной drag: окно неактивируемое (focusable:false), поэтому нативный
+// -webkit-app-region: drag на Windows не двигает его. Двигаем через IPC.
+let dragging = false;
+let lastDragX = 0;
+let lastDragY = 0;
+
+const titlebar = document.querySelector<HTMLElement>('#ov-titlebar');
+titlebar?.addEventListener('mousedown', (event) => {
+  if (event.button !== 0) return;
+  const target = event.target;
+  if (target instanceof Element && target.closest('button')) return;
+  dragging = true;
+  lastDragX = event.screenX;
+  lastDragY = event.screenY;
+  event.preventDefault();
+});
+
+window.addEventListener('mousemove', (event) => {
+  if (!dragging) return;
+  const dx = event.screenX - lastDragX;
+  const dy = event.screenY - lastDragY;
+  lastDragX = event.screenX;
+  lastDragY = event.screenY;
+  if (dx !== 0 || dy !== 0) window.craft.moveOverlay(dx, dy);
+});
+
+window.addEventListener('mouseup', () => {
+  dragging = false;
+});
 
 /** Экранирует любой текст из игры перед вставкой через innerHTML. */
 function escapeHtml(value: unknown): string {
@@ -229,7 +264,19 @@ function renderItem(item: ParsedItem): void {
       : '';
 
   const advice =
-    item.category === 'armour' && item.subtype === 'bodyArmour' ? analyzeCraft(item) : null;
+    item.category === 'weapon' ||
+    item.category === 'armour' ||
+    item.category === 'offhand' ||
+    item.category === 'jewellery' ||
+    item.category === 'flask' ||
+    item.category === 'charm' ||
+    item.category === 'jewel' ||
+    item.category === 'waystone' ||
+    item.category === 'tablet' ||
+    item.category === 'trap' ||
+    item.category === 'relic'
+      ? analyzeCraft(item)
+      : null;
 
   const grantedSkills =
     item.grantedSkills.length > 0

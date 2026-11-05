@@ -42,6 +42,8 @@ let mainWindow: BrowserWindow | null = null;
 let overlayWindow: BrowserWindow | null = null;
 let overlayReady: Promise<void> | null = null;
 let captureInProgress = false;
+let lastOverlayText: string | null = null;
+let overlayHasContent = false;
 
 app.setAppUserModelId('com.craftoverlay.app');
 
@@ -122,7 +124,6 @@ function createOverlayWindow(): void {
   });
 
   overlayWindow.setAlwaysOnTop(true, 'screen-saver');
-  overlayWindow.setIgnoreMouseEvents(true, { forward: true });
   overlayWindow.setMenuBarVisibility(false);
   overlayWindow.loadFile(join(__dirname, 'renderer/overlay.html'));
 
@@ -210,6 +211,8 @@ async function waitForCopiedItem(previous: string): Promise<string | null> {
 
 async function showOverlay(text: string | null): Promise<void> {
   const window = await ensureOverlayWindow();
+  lastOverlayText = text;
+  overlayHasContent = true;
   positionOverlay(window);
   window.webContents.send('capture:result', text);
 
@@ -252,6 +255,20 @@ app.whenReady().then(() => {
   ipcMain.handle('clipboard:write', (_event, text: unknown) => {
     if (typeof text === 'string') clipboard.writeText(text);
   });
+  ipcMain.on('overlay:hide', () => {
+    const wasVisible = overlayWindow?.isVisible();
+    overlayWindow?.hide();
+    console.log(`[overlay] hide via titlebar: ${wasVisible} -> ${overlayWindow?.isVisible()}`);
+  });
+  ipcMain.on('overlay:quit', () => {
+    console.log('[overlay] quit via titlebar');
+    app.quit();
+  });
+  ipcMain.on('overlay:move', (_event, dx: unknown, dy: unknown) => {
+    if (!overlayWindow || typeof dx !== 'number' || typeof dy !== 'number') return;
+    const [x = 0, y = 0] = overlayWindow.getPosition();
+    overlayWindow.setPosition(Math.round(x + dx), Math.round(y + dy));
+  });
 
   createMainWindow();
   createOverlayWindow();
@@ -267,9 +284,15 @@ app.whenReady().then(() => {
 
   const hideRegistered = globalShortcut.register(HIDE_OVERLAY_HOTKEY, () => {
     console.log('[hotkey] hide pressed');
-    const wasVisible = overlayWindow?.isVisible();
-    overlayWindow?.hide();
-    console.log(`[overlay] hide: ${wasVisible} -> ${overlayWindow?.isVisible()}`);
+    if (overlayWindow?.isVisible()) {
+      overlayWindow.hide();
+      console.log('[overlay] hidden');
+      return;
+    }
+    if (overlayHasContent) {
+      void showOverlay(lastOverlayText);
+      console.log('[overlay] shown again');
+    }
   });
   if (!hideRegistered) {
     console.warn(`Не удалось зарегистрировать глобальный хоткей ${HIDE_OVERLAY_HOTKEY}`);

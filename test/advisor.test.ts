@@ -148,7 +148,7 @@ describe('analyzeCraft: нательный доспех на ЭЩ', () => {
     expect(advice.steps.join(' ')).toContain('Не рероллить');
   });
 
-  it('гибридный доспех пока не поддерживается', () => {
+  it('гибридный доспех поддерживается', () => {
     const item = makeItem({
       properties: [
         esProperty('87'),
@@ -156,14 +156,36 @@ describe('analyzeCraft: нательный доспех на ЭЩ', () => {
       ],
     });
     const advice = analyzeCraft(item);
-    expect(advice.supported).toBe(false);
-    expect(advice.summary).toContain('чистого ЭЩ');
+    expect(advice.supported).toBe(true);
+    expect(advice.profile).toContain('ЭЩ');
   });
 
-  it('чужой слот пока не поддерживается', () => {
+  it('шлем и оружие получают свои профили', () => {
+    const helmet = analyzeCraft(
+      makeItem({ itemClass: 'Шлемы', subtype: 'helmet', name: 'Тиара', itemLevel: 80 }),
+    );
+    expect(helmet.supported).toBe(true);
+    expect(helmet.targetSuffixes.length).toBeGreaterThan(0);
+
+    const wand = analyzeCraft(
+      makeItem({
+        itemClass: 'Жезлы',
+        category: 'weapon',
+        subtype: 'wand',
+        name: 'Дуэльный жезл',
+        itemLevel: 80,
+      }),
+    );
+    expect(wand.supported).toBe(true);
+    expect(wand.profile).toContain('кастер');
+  });
+
+  it('камень умений без крафт-профиля', () => {
     const item = makeItem({
-      itemClass: 'Шлемы',
-      subtype: 'helmet',
+      itemClass: 'Камни умений',
+      category: 'gem',
+      subtype: 'skill',
+      name: 'Огненный шар',
     });
     const advice = analyzeCraft(item);
     expect(advice.supported).toBe(false);

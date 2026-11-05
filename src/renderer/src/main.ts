@@ -28,6 +28,7 @@ const RARITY_LABEL: Record<string, string> = {
 const CATEGORY_LABEL: Record<string, string> = {
   weapon: 'Оружие',
   armour: 'Доспехи',
+  offhand: 'Оффхенд',
   jewellery: 'Бижутерия',
   flask: 'Флакон',
   charm: 'Оберег',
@@ -36,6 +37,8 @@ const CATEGORY_LABEL: Record<string, string> = {
   currency: 'Валюта',
   waystone: 'Путевой камень',
   tablet: 'Плитка',
+  trap: 'Ловушка',
+  relic: 'Реликвия',
   quest: 'Квестовый предмет',
   unknown: 'Неизвестно',
 };
@@ -197,7 +200,19 @@ function renderItem(item: ParsedItem, jsonText: string): string {
       : properties || requirements;
 
   const advice =
-    item.category === 'armour' && item.subtype === 'bodyArmour' ? analyzeCraft(item) : null;
+    item.category === 'weapon' ||
+    item.category === 'armour' ||
+    item.category === 'offhand' ||
+    item.category === 'jewellery' ||
+    item.category === 'flask' ||
+    item.category === 'charm' ||
+    item.category === 'jewel' ||
+    item.category === 'waystone' ||
+    item.category === 'tablet' ||
+    item.category === 'trap' ||
+    item.category === 'relic'
+      ? analyzeCraft(item)
+      : null;
 
   const modifiers = item.modifiers.length > 0
     ? `<section class="block"><h3>Моды</h3><div class="mods">${item.modifiers

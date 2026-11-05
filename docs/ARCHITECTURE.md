@@ -1,7 +1,7 @@
 # Архитектура MVP: парсер предметов PoE2
 
-Статус: **M6 — пробный крафт-советник для нательных доспехов на ЭЩ; оверлей и парсер готовы**.
-MVP: парсер скопированного текста предмета. Без оверлея, trade API и OCR.
+Статус: **M6 — крафт-советник для всех типов экипировки; оверлей с верхней панелью и парсер готовы**.
+MVP: парсер скопированного текста предмета + оверлей + крафт-советник. Без trade API и OCR.
 
 Связанные документы:
 
@@ -134,8 +134,8 @@ craft-overlay/
 
 - **M3 Electron:** окно с вставкой текста и карточкой; `contextIsolation: true`, `nodeIntegration: false`. Реализовано: `src/main`, `src/preload`, `src/renderer`; exe в `release/`.
 - **M4 хоткей/буфер:** реализовано: `Alt+F` → PowerShell/keybd_event отправляет `Ctrl+Alt+C` в активное окно → ожидание буфера → разбор. Требует, чтобы игра была в фокусе, а курсор — на предмете. Одно действие на хоткей, без автоматизации кликов.
-- **M5 оверлей:** реализовано отдельное окно `transparent + frame:false + focusable:false + type:'toolbar' + skipTaskbar`, уровень `screen-saver`, `setIgnoreMouseEvents(true, {forward:true})`, показ через `showInactive()` без фокуса, позиционирование у курсора по `screen.getCursorScreenPoint()/getDisplayNearestPoint()`. `Alt+F` — захват и показ, `Alt+Shift+F` — скрыть. Работает в borderless; в exclusive fullscreen не виден.
-- **M6 крафт-советник:** без trade API и цен. `src/core/craft/advisor.ts` — чистая функция `analyzeCraft(item)`: проверка базы (пока только чистый ЭЩ), классификация explicit-модов (хороший/нейтральный/мусор), открытые префиксы/суффиксы, советы для normal/magic/rare. Данные — `bases.json`, `mods-data.json`, правила — `docs/CRAFT-ADVISOR.md`. UI: блок «Совет по крафту» в главном окне и оверлее.
+- **M5 оверлей:** реализовано отдельное окно `transparent + frame:false + focusable:false + type:'toolbar' + skipTaskbar`, уровень `screen-saver`, показ через `showInactive()` без фокуса, позиционирование у курсора по `screen.getCursorScreenPoint()/getDisplayNearestPoint()`. Верхняя панель: ручной drag через IPC (нативный `-webkit-app-region` не двигает non-activating окно), свернуть (hide), закрыть (quit). `Alt+F` — захват и показ, `Alt+Shift+F` — скрыть/показать. Работает в borderless; в exclusive fullscreen не виден.
+- **M6 крафт-советник:** без trade API и цен. `src/core/craft/advisor.ts` — чистая функция `analyzeCraft(item)`: профиль по категории/слоту, классификация explicit-модов по семействам (хороший/нейтральный/мусор), открытые префиксы/суффиксы, советы для normal/magic/rare. Поддержаны все категории экипировки, включая доспехи, оружие, оффхенд, бижутерию, фляконы, обереги, самоцветы, waystones, плитки и реликвии. Данные — `bases.json`, `mods-data.json`, правила — `docs/CRAFT-ADVISOR.md`. UI: блок «Совет по крафту» в главном окне и оверлее.
 
 ## 10. Roadmap
 
@@ -146,8 +146,8 @@ craft-overlay/
 | M2 | CLI + 40+ фикстур, устойчивость | в работе: 11 фикстур + данные |
 | M3 | Electron-окно | готово |
 | M4 | Хоткей и буфер | готово: `Alt+F` → `Ctrl+Alt+C` → разбор |
-| M5 | Оверлей | готово: click-through, без фокуса, `Alt+Shift+F` скрыть |
-| M6 | Крафт-советник без trade/цен | в работе: пробный body armour ES |
+| M5 | Оверлей | готово: верхняя панель (drag/свернуть/закрыть), без фокуса, `Alt+Shift+F` toggle |
+| M6 | Крафт-советник без trade/цен | в работе: все типы экипировки, универсальные профили |
 
 ## 11. Риски
 

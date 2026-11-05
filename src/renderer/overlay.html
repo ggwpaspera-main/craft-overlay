@@ -10,8 +10,19 @@
     <link rel="stylesheet" href="./overlay.css" />
   </head>
   <body>
-    <!-- Отдельное прозрачное окно-оверлей: только компактная карточка предмета. -->
-    <div id="ov-root" class="ov-root" aria-live="polite"></div>
+    <div class="ov-shell">
+      <header id="ov-titlebar" class="ov-titlebar">
+        <div class="ov-titlebar-drag">
+          <span class="ov-title">Craft Overlay</span>
+          <span class="ov-title-hint">Alt+F — новый предмет</span>
+        </div>
+        <div class="ov-titlebar-actions">
+          <button id="ov-minimize" class="ov-tb-btn" type="button" title="Свернуть оверлей">—</button>
+          <button id="ov-close" class="ov-tb-btn ov-tb-close" type="button" title="Закрыть приложение">×</button>
+        </div>
+      </header>
+      <div id="ov-root" class="ov-root" aria-live="polite"></div>
+    </div>
     <script src="./overlay.js"></script>
   </body>
 </html>

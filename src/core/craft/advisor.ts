@@ -1,15 +1,60 @@
 import type { ModifierGroup, ParsedItem } from '../types';
 
 /**
- * Пробный советник по крафту: пока только нательные доспехи на чистом ЭЩ.
+ * Крафт-советник (пробный режим).
  *
- * Это НЕ оценка цены и не «ИИ-мнение»: только правила по модам, тирам и
- * открытым слотам. Список целевых модов для нательного доспеха взят из
- * гайда-соседа («Лучшие статы для волшебного предмета») и уточнён под чистый
- * энергощит.
+ * Это НЕ оценка цены и не «ИИ-мнение»: правила по модам, семействам модов,
+ * тирам и открытым слотам. Оценка не привязана к конкретному билду —
+ * используются универсальные целевые семейства для слота/типа предмета.
  */
 
 export type AdviceVerdict = 'good' | 'neutral' | 'bad' | 'unknown';
+
+export type AdviceMode =
+  | 'equipment'
+  | 'flask'
+  | 'jewel'
+  | 'charm'
+  | 'waystone'
+  | 'tablet'
+  | 'relic';
+
+export type ModFamily =
+  | 'skillLevels'
+  | 'spellDamage'
+  | 'physicalDamage'
+  | 'addedDamage'
+  | 'defencePercent'
+  | 'defenceFlat'
+  | 'life'
+  | 'mana'
+  | 'spirit'
+  | 'resistance'
+  | 'chaosResistance'
+  | 'attributes'
+  | 'movementSpeed'
+  | 'attackSpeed'
+  | 'castSpeed'
+  | 'critChance'
+  | 'critMulti'
+  | 'esRecharge'
+  | 'thorns'
+  | 'stunThreshold'
+  | 'ailmentDuration'
+  | 'attributeRequirements'
+  | 'lifeRegen'
+  | 'flaskCharge'
+  | 'flaskDuration'
+  | 'flaskEffect'
+  | 'charmEffect'
+  | 'charmDuration'
+  | 'quantity'
+  | 'rarity'
+  | 'packSize'
+  | 'monsterEffectiveness'
+  | 'waystoneDrop'
+  | 'damage'
+  | 'unknown';
 
 export interface AdviceMod {
   kind: 'prefix' | 'suffix' | 'unknown';
@@ -41,92 +86,90 @@ export interface CraftAdvice {
   warnings: string[];
 }
 
-const PROFILE = 'Нательный доспех · Энергощит (пробный режим)';
-
-const TARGET_PREFIXES = [
-  '% повышение энергетического щита (высокий тир)',
-  '+N к максимуму энергетического щита (флэт)',
-  '+N к максимуму здоровья',
-  '+N к духу',
-];
-
-const TARGET_SUFFIXES = [
-  '+N% к сопротивлению огню / холоду / молнии',
-  '+N% к сопротивлению хаосу',
-  'повышение скорости перезарядки энергетического щита',
-  '+N к интеллекту (если нужен атрибут)',
-];
-
-interface Rule {
-  pattern: RegExp;
-  verdict: AdviceVerdict;
-  reason: string;
+interface AdviceProfile {
+  id: string;
+  label: string;
+  targetPrefixes: string[];
+  targetSuffixes: string[];
+  targetPrefixFamilies: ModFamily[];
+  targetSuffixFamilies: ModFamily[];
+  mode: AdviceMode;
 }
 
-const PREFIX_RULES: Rule[] = [
+interface FamilyRule {
+  family: ModFamily;
+  pattern: RegExp;
+}
+
+const FAMILY_RULES: FamilyRule[] = [
+  { family: 'skillLevels', pattern: /к уровню (всех )?камней умений|к уровню .*камней умений/i },
+  { family: 'spellDamage', pattern: /урона от чар/i },
+  { family: 'physicalDamage', pattern: /физического урона/i },
+  { family: 'addedDamage', pattern: /дополнительного урона|добавляет .*урона/i },
   {
-    pattern: /увеличение энергетического щита/i,
-    verdict: 'good',
-    reason: 'основной мод на ЭЩ',
+    family: 'defencePercent',
+    pattern: /(увеличение|повышение) (брони|уклонения|энергетического щита)/i,
   },
   {
-    pattern: /к максимуму энергетического щита/i,
-    verdict: 'good',
-    reason: 'флэт ЭЩ — база выживаемости',
+    family: 'defenceFlat',
+    pattern: /к (броне|уклонению|максимуму энергетического щита)/i,
   },
+  { family: 'life', pattern: /к максимуму здоровья/i },
+  { family: 'mana', pattern: /к максимуму маны/i },
+  { family: 'spirit', pattern: /к духу/i },
+  { family: 'chaosResistance', pattern: /к сопротивлению хаосу/i },
   {
-    pattern: /к максимуму здоровья/i,
-    verdict: 'good',
-    reason: 'жизнь полезна любому билду',
+    family: 'resistance',
+    pattern: /к сопротивлению (огню|холоду|молнии|всем стихиям)|к сопротивлениям/i,
   },
-  {
-    pattern: /к духу/i,
-    verdict: 'good',
-    reason: 'дух — ценный ресурс',
-  },
-  {
-    pattern: /к максимуму маны/i,
-    verdict: 'neutral',
-    reason: 'мана полезна, но не ключевой мод для ЭЩ-брони',
-  },
-  {
-    pattern: /шипами|порог|оглуш|снижение требований|регенерац/i,
-    verdict: 'bad',
-    reason: 'слабее целевых модов для ЭЩ-брони',
-  },
+  { family: 'attributes', pattern: /к (силе|ловкости|интеллекту|всем характеристикам)/i },
+  { family: 'movementSpeed', pattern: /скорости передвижения/i },
+  { family: 'attackSpeed', pattern: /скорости атаки/i },
+  { family: 'castSpeed', pattern: /скорости сотворения чар/i },
+  { family: 'critChance', pattern: /шанса критического удара/i },
+  { family: 'critMulti', pattern: /бонусу критического урона/i },
+  { family: 'esRecharge', pattern: /скорости перезарядки энергетического щита/i },
+  { family: 'thorns', pattern: /шипами/i },
+  { family: 'stunThreshold', pattern: /оглушени/i },
+  { family: 'ailmentDuration', pattern: /длительности (кровотечения|отравления)/i },
+  { family: 'attributeRequirements', pattern: /снижение требований к характеристикам/i },
+  { family: 'lifeRegen', pattern: /регенерация .*здоровья/i },
+  { family: 'flaskCharge', pattern: /зарядов|восполнения зарядов/i },
+  { family: 'flaskDuration', pattern: /длительности эффекта/i },
+  { family: 'flaskEffect', pattern: /эффекта флакона|эффективности флакона/i },
+  { family: 'charmEffect', pattern: /эффекта оберега|эффективности оберега/i },
+  { family: 'charmDuration', pattern: /длительности эффекта оберега/i },
+  { family: 'quantity', pattern: /количества находимых предметов/i },
+  { family: 'rarity', pattern: /редкости найденных предметов/i },
+  { family: 'packSize', pattern: /размер групп монстров/i },
+  { family: 'monsterEffectiveness', pattern: /эффективность монстров/i },
+  { family: 'waystoneDrop', pattern: /выпадения путевого камня/i },
+  { family: 'damage', pattern: /увеличение урона/i },
 ];
 
-const SUFFIX_RULES: Rule[] = [
-  {
-    pattern: /к сопротивлению/i,
-    verdict: 'good',
-    reason: 'резисты нужны почти любому билду',
-  },
-  {
-    pattern: /скорости перезарядки энергетического щита/i,
-    verdict: 'neutral',
-    reason: 'полезно для ЭЩ-билдов, но не ключевой мод',
-  },
-  {
-    pattern: /к интеллекту/i,
-    verdict: 'neutral',
-    reason: 'атрибут, ценность зависит от билда',
-  },
-  {
-    pattern: /оглушени|длительности (кровотечения|отравления)|снижение требований|регенерация .*здоровья/i,
-    verdict: 'bad',
-    reason: 'слабее целевых модов для ЭЩ-брони',
-  },
-];
+const BAD_FAMILIES = new Set<ModFamily>([
+  'thorns',
+  'stunThreshold',
+  'ailmentDuration',
+  'attributeRequirements',
+  'lifeRegen',
+]);
+
+function familyOf(text: string): ModFamily {
+  for (const rule of FAMILY_RULES) {
+    if (rule.pattern.test(text)) return rule.family;
+  }
+  return 'unknown';
+}
 
 function unsupported(summary: string, warnings: string[] = []): CraftAdvice {
   return {
     supported: false,
-    profile: PROFILE,
+    profile: 'Советник',
     summary,
     steps: [],
-    targetPrefixes: TARGET_PREFIXES,
-    targetSuffixes: TARGET_SUFFIXES,
+    targetPrefixes: [],
+    targetSuffixes: [],
     mods: [],
     counts: {
       prefixes: 0,
@@ -153,17 +196,313 @@ function groupText(group: ModifierGroup): string {
   return group.lines.map((line) => line.text).filter(Boolean).join(' / ') || group.headerRaw;
 }
 
-function classify(kind: 'prefix' | 'suffix', text: string): { verdict: AdviceVerdict; reason: string } {
-  const rules = kind === 'prefix' ? PREFIX_RULES : SUFFIX_RULES;
-  for (const rule of rules) {
-    if (rule.pattern.test(text)) {
-      return { verdict: rule.verdict, reason: rule.reason };
-    }
-  }
+function defenceLabel(item: ParsedItem): string {
+  const parts: string[] = [];
+  if (numericProperty(item, 'energyShield') > 0) parts.push('ЭЩ');
+  if (numericProperty(item, 'armour') > 0) parts.push('броня');
+  if (numericProperty(item, 'evasion') > 0) parts.push('уклонение');
+  return parts.length > 0 ? parts.join(' + ') : 'защита';
+}
+
+function equipmentProfile(
+  item: ParsedItem,
+  label: string,
+  targetPrefixes: string[],
+  targetSuffixes: string[],
+  targetPrefixFamilies: ModFamily[],
+  targetSuffixFamilies: ModFamily[],
+): AdviceProfile {
   return {
-    verdict: 'neutral',
-    reason: 'не из целевого списка — проверь под свой билд',
+    id: label,
+    label,
+    targetPrefixes,
+    targetSuffixes,
+    targetPrefixFamilies,
+    targetSuffixFamilies,
+    mode: 'equipment',
   };
+}
+
+function armourProfile(item: ParsedItem): AdviceProfile {
+  const defence = defenceLabel(item);
+  const slotLabel: Record<string, string> = {
+    bodyArmour: 'Нательный доспех',
+    helmet: 'Шлем',
+    gloves: 'Перчатки',
+    boots: 'Обувь',
+    shield: 'Щит',
+    buckler: 'Баклер',
+  };
+  const slot = slotLabel[item.subtype ?? ''] ?? item.itemClass;
+  const prefixLabels = [
+    `% повышение ${defence}`,
+    `+N к ${defence}`,
+    '+N к максимуму здоровья',
+    '+N к духу',
+  ];
+  const prefixFamilies: ModFamily[] = ['defencePercent', 'defenceFlat', 'life', 'spirit'];
+  const suffixLabels = [
+    '+N% к сопротивлению огню / холоду / молнии',
+    '+N% к сопротивлению хаосу',
+    '+N к силе / ловкости / интеллекту',
+  ];
+  const suffixFamilies: ModFamily[] = ['resistance', 'chaosResistance', 'attributes'];
+
+  if (item.subtype === 'boots') {
+    suffixLabels.push('30–35% повышение скорости передвижения');
+    suffixFamilies.push('movementSpeed');
+  }
+  if (item.subtype === 'gloves') {
+    suffixLabels.push('скорость атаки / скорость сотворения чар');
+    suffixFamilies.push('attackSpeed', 'castSpeed');
+  }
+  if (numericProperty(item, 'energyShield') > 0) {
+    suffixLabels.push('повышение скорости перезарядки ЭЩ');
+    suffixFamilies.push('esRecharge');
+  }
+
+  return equipmentProfile(
+    item,
+    `${slot} · ${defence}`,
+    prefixLabels,
+    suffixLabels,
+    prefixFamilies,
+    suffixFamilies,
+  );
+}
+
+function weaponProfile(item: ParsedItem): AdviceProfile {
+  const caster = item.subtype === 'wand' || item.subtype === 'staff' || item.subtype === 'sceptre';
+  if (caster) {
+    return equipmentProfile(
+      item,
+      `${item.itemClass} · кастер`,
+      [
+        '% увеличение урона от чар',
+        '+N к максимуму маны',
+        '+N к духу',
+        'добавляет урон от чар / элемента',
+      ],
+      [
+        'скорость сотворения чар',
+        'шанс критического удара',
+        'бонус критического урона',
+        '+N к уровню всех камней умений',
+      ],
+      ['spellDamage', 'mana', 'spirit', 'addedDamage'],
+      ['castSpeed', 'critChance', 'critMulti', 'skillLevels'],
+    );
+  }
+  return equipmentProfile(
+    item,
+    `${item.itemClass} · атака`,
+    [
+      '% увеличение физического урона',
+      'добавляет физический / элементарный урон',
+      '+N к максимуму здоровья',
+    ],
+    [
+      'скорость атаки',
+      'шанс критического удара',
+      'бонус критического урона',
+      '+N к уровню всех камней умений',
+    ],
+    ['physicalDamage', 'addedDamage', 'life'],
+    ['attackSpeed', 'critChance', 'critMulti', 'skillLevels'],
+  );
+}
+
+function offhandProfile(item: ParsedItem): AdviceProfile {
+  if (item.subtype === 'focus') {
+    return equipmentProfile(
+      item,
+      'Фокус · ЭЩ',
+      ['% повышение ЭЩ', '+N к ЭЩ', '+N к духу', '+N к максимуму маны'],
+      [
+        'скорость сотворения чар',
+        'шанс критического удара',
+        'бонус критического урона',
+        '+N к уровню всех камней умений',
+        '+N% к сопротивлению',
+      ],
+      ['defencePercent', 'defenceFlat', 'spirit', 'mana'],
+      ['castSpeed', 'critChance', 'critMulti', 'skillLevels', 'resistance'],
+    );
+  }
+  if (item.subtype === 'quiver') {
+    return equipmentProfile(
+      item,
+      'Колчан · атака',
+      ['% увеличение физического урона', 'добавляет физический / элементарный урон', '+N к максимуму здоровья'],
+      ['скорость атаки', 'шанс критического удара', 'бонус критического урона', '+N% к сопротивлению'],
+      ['physicalDamage', 'addedDamage', 'life'],
+      ['attackSpeed', 'critChance', 'critMulti', 'resistance'],
+    );
+  }
+  return armourProfile(item);
+}
+
+function jewelleryProfile(item: ParsedItem): AdviceProfile {
+  return equipmentProfile(
+    item,
+    `${item.itemClass} · универсальные`,
+    [
+      '+N к максимуму здоровья',
+      '+N к максимуму маны',
+      '+N к духу',
+      'добавляет физический / элементарный урон',
+    ],
+    [
+      '+N% к сопротивлению огню / холоду / молнии',
+      '+N% к сопротивлению хаосу',
+      '+N к силе / ловкости / интеллекту',
+      'скорость атаки / сотворения чар',
+      'шанс критического удара',
+      '+N к уровню всех камней умений',
+    ],
+    ['life', 'mana', 'spirit', 'addedDamage'],
+    [
+      'resistance',
+      'chaosResistance',
+      'attributes',
+      'attackSpeed',
+      'castSpeed',
+      'critChance',
+      'critMulti',
+      'skillLevels',
+    ],
+  );
+}
+
+function flaskProfile(item: ParsedItem): AdviceProfile {
+  return {
+    id: 'flask',
+    label: `${item.itemClass} · флакон`,
+    targetPrefixes: ['эффект флакона', 'восстановление зарядов'],
+    targetSuffixes: ['длительность эффекта', 'эффект флакона'],
+    targetPrefixFamilies: ['flaskEffect', 'flaskCharge'],
+    targetSuffixFamilies: ['flaskDuration', 'flaskEffect'],
+    mode: 'flask',
+  };
+}
+
+function charmProfile(item: ParsedItem): AdviceProfile {
+  return {
+    id: 'charm',
+    label: `${item.itemClass} · оберег`,
+    targetPrefixes: ['эффект оберега', 'заряды оберега'],
+    targetSuffixes: ['длительность эффекта оберега', 'эффект оберега'],
+    targetPrefixFamilies: ['charmEffect', 'flaskCharge'],
+    targetSuffixFamilies: ['charmDuration', 'charmEffect'],
+    mode: 'charm',
+  };
+}
+
+function jewelProfile(item: ParsedItem): AdviceProfile {
+  return {
+    id: 'jewel',
+    label: `${item.itemClass} · самоцвет`,
+    targetPrefixes: ['+N к максимуму здоровья', '% увеличение урона', 'добавляет урон'],
+    targetSuffixes: [
+      '+N% к сопротивлению',
+      '+N к атрибутам',
+      'скорость атаки / сотворения чар',
+      'шанс / бонус критического удара',
+    ],
+    targetPrefixFamilies: ['life', 'damage', 'physicalDamage', 'spellDamage', 'addedDamage'],
+    targetSuffixFamilies: [
+      'resistance',
+      'attributes',
+      'attackSpeed',
+      'castSpeed',
+      'critChance',
+      'critMulti',
+      'mana',
+    ],
+    mode: 'jewel',
+  };
+}
+
+function waystoneProfile(item: ParsedItem): AdviceProfile {
+  return {
+    id: 'waystone',
+    label: `${item.itemClass} · маппинг`,
+    targetPrefixes: [
+      'количество находимых предметов',
+      'редкость найденных предметов',
+      'размер групп монстров',
+    ],
+    targetSuffixes: [
+      'эффективность монстров',
+      'шанс выпадения путевого камня',
+      'редкость найденных предметов',
+    ],
+    targetPrefixFamilies: ['quantity', 'rarity', 'packSize'],
+    targetSuffixFamilies: ['monsterEffectiveness', 'waystoneDrop', 'rarity'],
+    mode: item.category === 'tablet' ? 'tablet' : 'waystone',
+  };
+}
+
+function relicProfile(item: ParsedItem): AdviceProfile {
+  return equipmentProfile(
+    item,
+    `${item.itemClass} · реликвия`,
+    ['+N к максимуму здоровья', '% повышение защиты', '+N к духу'],
+    ['+N% к сопротивлению', '+N к атрибутам', 'увеличение урона'],
+    ['life', 'defencePercent', 'defenceFlat', 'spirit'],
+    ['resistance', 'attributes', 'damage'],
+  );
+}
+
+function profileFor(item: ParsedItem): AdviceProfile | null {
+  switch (item.category) {
+    case 'armour':
+      return armourProfile(item);
+    case 'weapon':
+      return weaponProfile(item);
+    case 'offhand':
+      return offhandProfile(item);
+    case 'jewellery':
+      return jewelleryProfile(item);
+    case 'flask':
+      return flaskProfile(item);
+    case 'charm':
+      return charmProfile(item);
+    case 'jewel':
+      return jewelProfile(item);
+    case 'waystone':
+    case 'tablet':
+      return waystoneProfile(item);
+    case 'relic':
+      return relicProfile(item);
+    case 'trap':
+      return weaponProfile(item);
+    default:
+      return null;
+  }
+}
+
+function classify(
+  kind: 'prefix' | 'suffix',
+  text: string,
+  profile: AdviceProfile,
+): { verdict: AdviceVerdict; reason: string } {
+  const family = familyOf(text);
+  if (family === 'unknown') {
+    return {
+      verdict: 'neutral',
+      reason: 'мод не распознан — проверь под свой билд',
+    };
+  }
+  const targets =
+    kind === 'prefix' ? profile.targetPrefixFamilies : profile.targetSuffixFamilies;
+  if (targets.includes(family)) {
+    return { verdict: 'good', reason: `целевой мод для ${profile.label}` };
+  }
+  if (BAD_FAMILIES.has(family)) {
+    return { verdict: 'bad', reason: 'слабый мод для этого слота' };
+  }
+  return { verdict: 'neutral', reason: 'полезно, но не ключевой мод' };
 }
 
 function makeSummary(baseLabel: string, itemLevel: number | undefined, action: string): string {
@@ -172,35 +511,16 @@ function makeSummary(baseLabel: string, itemLevel: number | undefined, action: s
 }
 
 export function analyzeCraft(item: ParsedItem): CraftAdvice {
-  const isBodyArmour =
-    item.subtype === 'bodyArmour' || item.itemClass === 'Нательные доспехи';
-  if (!isBodyArmour) {
-    return unsupported('Пробный советник пока работает только для нательных доспехов.');
-  }
-
   if (item.rarity !== 'normal' && item.rarity !== 'magic' && item.rarity !== 'rare') {
     return unsupported(
-      `Пробный советник поддерживает только белые, волшебные и редкие доспехи (сейчас: ${item.rarity}).`,
+      `Советник поддерживает белые, волшебные и редкие предметы (сейчас: ${item.rarity}).`,
     );
   }
 
-  const energyShield = numericProperty(item, 'energyShield');
-  const armour = numericProperty(item, 'armour');
-  const evasion = numericProperty(item, 'evasion');
-
-  if (energyShield <= 0) {
+  const profile = profileFor(item);
+  if (!profile) {
     return unsupported(
-      'Не вижу энергетического щита в тексте предмета. Нужен advanced-copy (Alt+F / Ctrl+Alt+C).',
-    );
-  }
-  if (armour > 0 || evasion > 0) {
-    return unsupported(
-      `Пробный советник пока только для чистого ЭЩ. У предмета есть ${[
-        armour > 0 ? 'броня' : '',
-        evasion > 0 ? 'уклонение' : '',
-      ]
-        .filter(Boolean)
-        .join(' и ')}.`,
+      `Для типа «${item.itemClass}» пока нет профиля рекомендаций.`,
     );
   }
 
@@ -213,7 +533,7 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
   const mods: AdviceMod[] = groups.map((group) => {
     const kind = group.kind === 'prefix' ? 'prefix' : 'suffix';
     const text = groupText(group);
-    const result = classify(kind, text);
+    const result = classify(kind, text, profile);
     return {
       kind,
       text,
@@ -254,8 +574,19 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
   let summary = '';
   let steps: string[] = [];
 
-  if (item.rarity === 'normal') {
-    summary = `Белый ${baseLabel}${levelText}. Цель — получить 2 целевых мода и решить, делать ли редким.`;
+  if (profile.mode === 'waystone' || profile.mode === 'tablet') {
+    summary = `${profile.label}${levelText}. Оценка по модам для маппинга.`;
+    steps = [
+      'Смотри на количество и редкость находимых предметов, размер групп монстров.',
+      'Эффективность монстров повышает опасность — учитывай свой билд.',
+      'Хороший набор не рероллить; крафт путевых камней валютой — отдельная тема.',
+    ];
+  } else if (item.rarity === 'normal') {
+    summary = makeSummary(
+      `Белый ${baseLabel}`,
+      item.itemLevel,
+      'Цель — получить 2 целевых мода и решить, делать ли редким.',
+    );
     steps = [
       '1. Сфера превращения (Orb of Transmutation) — сделать волшебным, получить 1 мод.',
       '2. Сфера усиления (Orb of Augmentation) — добавить 2-й мод.',
@@ -263,40 +594,40 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
     ];
   } else if (item.rarity === 'magic') {
     if (counts.prefixes + counts.suffixes === 0) {
-      summary = `Волшебный ${baseLabel}${levelText}, но явных модов не видно.`;
+      summary = makeSummary(`Волшебный ${baseLabel}`, item.itemLevel, 'Явных модов не видно.');
       steps = [
         'Проверь копирование: нужен advanced-copy (Alt+F / Ctrl+Alt+C).',
         'Если модов действительно нет — начни с Сферы превращения → Сферы усиления.',
       ];
     } else if (counts.prefixes + counts.suffixes === 1) {
       if (counts.good > 0) {
-        summary = `Один хороший мод. ${baseLabel}${levelText}.`;
+        summary = makeSummary(`Один хороший мод. ${baseLabel}`, item.itemLevel, '');
         steps = [
           'Сфера усиления (Orb of Augmentation) — добавить второй мод.',
           'Если второй мод тоже целевой → Сфера царей (Regal Orb).',
           'Если второй мод мусорный → Сфера алхимии (Alchemy) / новый base.',
         ];
       } else {
-        summary = `Один мод, но он не из целевых. ${baseLabel}${levelText}.`;
+        summary = makeSummary(`Один мод, но он не из целевых. ${baseLabel}`, item.itemLevel, '');
         steps = [
           'Не тратить Сферу усиления на эту базу.',
           'Сфера алхимии (Alchemy Orb) или новый base — иначе Regal закрепит слабый мод.',
         ];
       }
     } else if (counts.good >= 2) {
-      summary = `Оба мода целевые. ${baseLabel}${levelText}.`;
+      summary = makeSummary(`Оба мода целевые. ${baseLabel}`, item.itemLevel, '');
       steps = [
         'Сфера царей (Regal Orb) — сделать предмет редким, сохранив оба мода.',
         'Дальше смотри совет для редкого предмета.',
       ];
     } else if (counts.good === 1) {
-      summary = `Один целевой мод и один нецелевой. ${baseLabel}${levelText}.`;
+      summary = makeSummary(`Один целевой мод и один нецелевой. ${baseLabel}`, item.itemLevel, '');
       steps = [
         'Сфера царей (Regal) закрепит мусор — обычно не лучший вариант.',
         'Сфера алхимии (Alchemy Orb) или новый base.',
       ];
     } else {
-      summary = `Целевых модов нет. ${baseLabel}${levelText}.`;
+      summary = makeSummary(`Целевых модов нет. ${baseLabel}`, item.itemLevel, '');
       steps = [
         'Не тратить Сферу царей на эту пару.',
         'Сфера алхимии (Alchemy Orb) для полного реролла или новый base.',
@@ -305,31 +636,35 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
   } else {
     const openSlots = openPrefixes + openSuffixes;
     if (counts.good === 0) {
-      summary = `Редкий ${baseLabel}${levelText}: целевых модов нет.`;
+      summary = makeSummary(`Редкий ${baseLabel}`, item.itemLevel, 'Целевых модов нет.');
       steps = [
         'Не тратить валюту на докрафт.',
-        'Chaos Orb / Alchemy рискованны — лучше новый base.',
+        'Сфера хаоса / алхимии рискованны — лучше новый base.',
       ];
     } else if (counts.good >= 2 && openSlots > 0) {
-      summary = `${counts.good} целевых мода, открыто слотов: ${openSlots}. ${baseLabel}${levelText}.`;
+      summary = makeSummary(
+        `${counts.good} целевых мода, открыто слотов: ${openSlots}. ${baseLabel}`,
+        item.itemLevel,
+        '',
+      );
       steps = [
         `Сфера возвышения (Exalted Orb) в открытый ${openPrefixes > 0 ? 'префикс' : 'суффикс'} — попытка усилить предмет.`,
         'Если попадёт мусор — остановиться, не рероллить хорошие моды.',
       ];
     } else if (counts.good >= 2) {
-      summary = `Сильный набор: ${counts.good} целевых мода. ${baseLabel}${levelText}.`;
+      summary = makeSummary(`Сильный набор: ${counts.good} целевых мода. ${baseLabel}`, item.itemLevel, '');
       steps = [
         'Не рероллить: моды уже сильные.',
         'Дальше — только если уверен в конкретном апгрейде; без цен оценка не считается.',
       ];
     } else if (counts.good === 1 && counts.bad >= 2) {
-      summary = `Один целевой мод и много мусора. ${baseLabel}${levelText}.`;
+      summary = makeSummary(`Один целевой мод и много мусора. ${baseLabel}`, item.itemLevel, '');
       steps = [
         'Сфера хаоса (Chaos Orb) рискованно: может убрать хороший мод.',
         'Для новичка — новый base выгоднее по нервам и результату.',
       ];
     } else if (counts.good === 1) {
-      summary = `Один целевой мод. ${baseLabel}${levelText}.`;
+      summary = makeSummary(`Один целевой мод. ${baseLabel}`, item.itemLevel, '');
       steps = [
         openSlots > 0
           ? 'Можно попробовать Сферу возвышения (Exalted Orb) в открытый слот, но рискованно.'
@@ -337,7 +672,7 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
         'Если не готов рисковать — оставь как есть / новый base.',
       ];
     } else {
-      summary = `Целевых модов мало. ${baseLabel}${levelText}.`;
+      summary = makeSummary(`Целевых модов мало. ${baseLabel}`, item.itemLevel, '');
       steps = [
         'Не тратить дорогую валюту.',
         'Сфера алхимии / новый base; Сфера хаоса без понимания рисков не советую.',
@@ -349,11 +684,11 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
 
   return {
     supported: true,
-    profile: PROFILE,
+    profile: `${profile.label} (пробный режим)`,
     summary,
     steps,
-    targetPrefixes: TARGET_PREFIXES,
-    targetSuffixes: TARGET_SUFFIXES,
+    targetPrefixes: profile.targetPrefixes,
+    targetSuffixes: profile.targetSuffixes,
     mods,
     counts,
     warnings,
