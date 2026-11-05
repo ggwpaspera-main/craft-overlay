@@ -40,24 +40,19 @@ test/                 тесты (появятся на M1)
 | Git | 2.56.0 | из GitHub Desktop: `%LOCALAPPDATA%\GitHubDesktop\app-<версия>\resources\app\git\cmd` |
 | GitHub CLI | 2.103.3 | `%LOCALAPPDATA%\Programs\gh\bin` |
 
-В новом терминале PATH может быть не настроен. Чтобы добавить инструменты в текущую сессию:
+В новом терминале PATH уже настроен: `node`, `npm.cmd`, `gh` и `git` добавлены в пользовательский PATH. Если терминал был открыт до настройки — перезапусти его.
 
-```powershell
-. .\scripts\dev-env.ps1
-```
-
-Git и gh настроены: `gh auth login` выполнен для аккаунта `ggwpaspera-main`, git credential helper указывает на gh, push/pull работают.
+Особенность: в PowerShell включена политика выполнения, которая блокирует `npm.ps1`. Поэтому используй **`npm.cmd`** — он работает без изменения политики. Git и gh настроены: `gh auth login` выполнен для аккаунта `ggwpaspera-main`, git credential helper указывает на gh, push/pull работают.
 
 ## Быстрый старт
 
 ```powershell
-. .\scripts\dev-env.ps1
-npm install
-npm test
-npm run parse -- fixtures/ru/rare-helmet-advanced.txt
+npm.cmd install
+npm.cmd test
+npm.cmd run parse -- fixtures/ru/rare-helmet-advanced.txt
 ```
 
-`npm run parse` появится вместе с `src/cli.ts` на этапе M1.
+`npm.cmd run parse` появится вместе с `src/cli.ts` на этапе M1.
 
 ## Фикстуры
 
