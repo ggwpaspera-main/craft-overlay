@@ -1,5 +1,7 @@
-import { app, BrowserWindow, clipboard, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, shell } from 'electron';
 import { join } from 'node:path';
+
+const TOGGLE_HOTKEY = 'CommandOrControl+Shift+D';
 
 app.setAppUserModelId('com.craftoverlay.app');
 
@@ -29,6 +31,15 @@ function createWindow(): void {
   });
 }
 
+function showAndParseClipboard(): void {
+  const [window] = BrowserWindow.getAllWindows();
+  if (!window) return;
+  if (window.isMinimized()) window.restore();
+  if (!window.isVisible()) window.show();
+  window.focus();
+  window.webContents.send('hotkey:parse-clipboard');
+}
+
 app.whenReady().then(() => {
   ipcMain.handle('clipboard:read', () => clipboard.readText());
   ipcMain.handle('clipboard:write', (_event, text: unknown) => {
@@ -37,9 +48,18 @@ app.whenReady().then(() => {
 
   createWindow();
 
+  const registered = globalShortcut.register(TOGGLE_HOTKEY, showAndParseClipboard);
+  if (!registered) {
+    console.warn(`Не удалось зарегистрировать глобальный хоткей ${TOGGLE_HOTKEY}`);
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
 });
 
 app.on('window-all-closed', () => {

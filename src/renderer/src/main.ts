@@ -379,4 +379,10 @@ result.addEventListener('click', (event) => {
   if (target) void copyJson(target);
 });
 
+if (window.craft?.onHotkey) {
+  window.craft.onHotkey(() => {
+    void pasteFromClipboard();
+  });
+}
+
 render();
