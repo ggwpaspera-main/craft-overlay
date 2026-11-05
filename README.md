@@ -2,7 +2,7 @@
 
 Оверлей-помощник для **Path of Exile 2** (Windows). Первый этап — парсер текста предмета: из скопированного в игре текста (`Ctrl+C` / `Ctrl+Alt+C`) получаем нормализованный JSON с классом, редкостью, свойствами, модами, тирами и флагами.
 
-Репозиторий: **https://github.com/ggwpaspera-main/craft-overlay** (private).
+Репозиторий: **https://github.com/ggwpaspera-main/craft-overlay** (public).
 
 > Статус: **M2 — корпус расширен до 11 предметов**. Парсер v0.2.0: классы, качество с типом, advanced-моды с аннотациями, состояния `fractured/crafted/desecrated`, granted skills, лор/описания, флаги. CLI и 12 тестов.
 
