@@ -2,7 +2,9 @@
 
 Оверлей-помощник для **Path of Exile 2** (Windows). Первый этап — парсер текста предмета: из скопированного в игре текста (`Ctrl+C` / `Ctrl+Alt+C`) получаем нормализованный JSON с классом, редкостью, свойствами, модами, тирами и флагами.
 
-> Статус: **M0–M1**. Создан репозиторий, собраны первые фикстуры реальных предметов (русский клиент), зафиксирован формат. Парсер ещё не написан.
+Репозиторий: **https://github.com/ggwpaspera-main/craft-overlay** (private).
+
+> Статус: **M0 завершён, начинается M1**. Репозиторий создан, собраны первые фикстуры реальных предметов (русский клиент), зафиксирован формат, описана модель данных. Парсер ещё не написан.
 
 ## Зачем парсер первым
 
@@ -27,14 +29,29 @@ test/                 тесты (появятся на M1)
 - [docs/FORMAT-RU.md](docs/FORMAT-RU.md) — разобранный формат русского advanced-copy.
 - [docs/REFERENCES.md](docs/REFERENCES.md) — что полезного лежит в `default-workspace`.
 
-## Требования
+## Требования и окружение
 
-- Node.js LTS (локально установлен в `%LOCALAPPDATA%\Programs\nodejs`)
-- Git (используется Git из GitHub Desktop либо установленный отдельно)
+Инструменты уже установлены локально (без прав администратора):
+
+| Инструмент | Версия | Путь |
+|---|---|---|
+| Node.js LTS | v26.13.0 | `%LOCALAPPDATA%\Programs\nodejs` |
+| npm | 11.20.0 | вместе с Node |
+| Git | 2.56.0 | из GitHub Desktop: `%LOCALAPPDATA%\GitHubDesktop\app-<версия>\resources\app\git\cmd` |
+| GitHub CLI | 2.103.3 | `%LOCALAPPDATA%\Programs\gh\bin` |
+
+В новом терминале PATH может быть не настроен. Чтобы добавить инструменты в текущую сессию:
+
+```powershell
+. .\scripts\dev-env.ps1
+```
+
+Git и gh настроены: `gh auth login` выполнен для аккаунта `ggwpaspera-main`, git credential helper указывает на gh, push/pull работают.
 
 ## Быстрый старт
 
 ```powershell
+. .\scripts\dev-env.ps1
 npm install
 npm test
 npm run parse -- fixtures/ru/rare-helmet-advanced.txt
