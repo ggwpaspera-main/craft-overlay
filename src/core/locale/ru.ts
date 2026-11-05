@@ -68,6 +68,7 @@ export const ru: LocaleDictionary = {
   properties: {
     'Энергетический щит': 'energyShield',
     'Уклонение': 'evasion',
+    'Броня': 'armour',
     'Доступно возрождений': 'waystoneRevives',
     'Размер групп монстров': 'monsterPackSize',
     'Эффективность монстров': 'monsterEffectiveness',

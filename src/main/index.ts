@@ -45,6 +45,22 @@ let captureInProgress = false;
 
 app.setAppUserModelId('com.craftoverlay.app');
 
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+  process.exit(0);
+}
+
+app.on('second-instance', () => {
+  if (overlayWindow?.isVisible()) {
+    overlayWindow.moveTop();
+  } else if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
+});
+
 function createMainWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1080,

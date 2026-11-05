@@ -1,4 +1,6 @@
 import { parseItemText } from '../../core/parser';
+import { analyzeCraft } from '../../core/craft/advisor';
+import type { CraftAdvice } from '../../core/craft/advisor';
 import type { ModifierGroup, ModValue, ParsedItem, StatLine } from '../../core/types';
 
 function queryRequired<T extends Element>(selector: string): T {
@@ -194,6 +196,9 @@ function renderItem(item: ParsedItem, jsonText: string): string {
       ? `<div class="two-col">${properties}${requirements}</div>`
       : properties || requirements;
 
+  const advice =
+    item.category === 'armour' && item.subtype === 'bodyArmour' ? analyzeCraft(item) : null;
+
   const modifiers = item.modifiers.length > 0
     ? `<section class="block"><h3>Моды</h3><div class="mods">${item.modifiers
         .map((modifier) => renderModifier(modifier))
@@ -244,6 +249,7 @@ function renderItem(item: ParsedItem, jsonText: string): string {
 
       ${flagChips ? `<div class="chip-row">${flagChips}</div>` : ''}
       ${statsBlocks}
+      ${advice ? renderAdvice(advice) : ''}
       ${modifiers}
       ${grantedSkills}
       ${runes}
@@ -253,6 +259,80 @@ function renderItem(item: ParsedItem, jsonText: string): string {
       ${unknown}
       ${jsonBlock(jsonText)}
     </article>
+  `;
+}
+
+function renderAdvice(advice: CraftAdvice): string {
+  const profile = `<span class="advice-profile">${escapeHtml(advice.profile)}</span>`;
+  const warnings = advice.warnings.length
+    ? `<div class="advice-warnings">${advice.warnings.map((warning) => `<div>${escapeHtml(warning)}</div>`).join('')}</div>`
+    : '';
+
+  if (!advice.supported) {
+    return `
+      <section class="block advice advice-unsupported">
+        <h3>Совет по крафту ${profile}</h3>
+        <p class="advice-summary">${escapeHtml(advice.summary)}</p>
+        ${warnings}
+      </section>
+    `;
+  }
+
+  const counts = `
+    <div class="advice-counts">
+      <span class="advice-count good">целевых: ${advice.counts.good}</span>
+      <span class="advice-count neutral">нейтральных: ${advice.counts.neutral}</span>
+      <span class="advice-count bad">мусорных: ${advice.counts.bad}</span>
+      <span class="advice-count">открыто: P${advice.counts.openPrefixes} / S${advice.counts.openSuffixes}</span>
+    </div>
+  `;
+
+  const steps = advice.steps.length
+    ? `<ol class="advice-steps">${advice.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join('')}</ol>`
+    : '';
+
+  const targets = `
+    <div class="advice-targets">
+      <div>
+        <h4>Целевые префиксы</h4>
+        <ul>${advice.targetPrefixes.map((target) => `<li>${escapeHtml(target)}</li>`).join('')}</ul>
+      </div>
+      <div>
+        <h4>Целевые суффиксы</h4>
+        <ul>${advice.targetSuffixes.map((target) => `<li>${escapeHtml(target)}</li>`).join('')}</ul>
+      </div>
+    </div>
+  `;
+
+  const mods = advice.mods.length
+    ? `<div class="advice-mods">${advice.mods
+        .map(
+          (mod) => `
+            <div class="advice-mod">
+              <span class="advice-verdict ${escapeHtml(mod.verdict)}">${
+                mod.verdict === 'good'
+                  ? 'хороший'
+                  : mod.verdict === 'bad'
+                    ? 'мусор'
+                    : 'нейтральный'
+              }</span>
+              <span class="advice-mod-kind">${mod.kind === 'prefix' ? 'P' : 'S'}${mod.tier !== undefined ? ` · тир ${mod.tier}` : ''}</span>
+              <span class="advice-mod-text">${escapeHtml(mod.text)}</span>
+            </div>`,
+        )
+        .join('')}</div>`
+    : '';
+
+  return `
+    <section class="block advice">
+      <h3>Совет по крафту ${profile}</h3>
+      <p class="advice-summary">${escapeHtml(advice.summary)}</p>
+      ${counts}
+      ${steps}
+      ${mods}
+      ${targets}
+      ${warnings}
+    </section>
   `;
 }
 

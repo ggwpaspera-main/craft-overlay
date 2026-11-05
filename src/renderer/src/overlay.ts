@@ -8,6 +8,8 @@
  */
 
 import { parseItemText } from '../../core/parser';
+import { analyzeCraft } from '../../core/craft/advisor';
+import type { CraftAdvice } from '../../core/craft/advisor';
 import type { ModifierGroup, ModValue, ParsedItem, StatLine } from '../../core/types';
 
 const RARITY_LABEL: Record<string, string> = {
@@ -226,6 +228,9 @@ function renderItem(item: ParsedItem): void {
         )
       : '';
 
+  const advice =
+    item.category === 'armour' && item.subtype === 'bodyArmour' ? analyzeCraft(item) : null;
+
   const grantedSkills =
     item.grantedSkills.length > 0
       ? block(
@@ -262,6 +267,7 @@ function renderItem(item: ParsedItem): void {
       ${meta}
     </div>
     <div class="ov-body">
+      ${advice ? renderAdvice(advice) : ''}
       ${stats}
       ${modifiers}
       ${grantedSkills}
@@ -270,6 +276,45 @@ function renderItem(item: ParsedItem): void {
       ${description}
     </div>
   `);
+}
+
+function renderAdvice(advice: CraftAdvice): string {
+  const profile = escapeHtml(advice.profile);
+  const warnings = advice.warnings.length
+    ? `<div class="ov-advice-warnings">${advice.warnings.map((warning) => `<div>${escapeHtml(warning)}</div>`).join('')}</div>`
+    : '';
+
+  if (!advice.supported) {
+    return `
+      <div class="ov-advice ov-advice-off">
+        <div class="ov-advice-head">Совет по крафту · ${profile}</div>
+        <div class="ov-advice-summary">${escapeHtml(advice.summary)}</div>
+        ${warnings}
+      </div>
+    `;
+  }
+
+  const steps = advice.steps
+    .slice(0, 5)
+    .map((step) => `<li>${escapeHtml(step)}</li>`)
+    .join('');
+
+  const targets = `
+    <div class="ov-advice-targets">
+      <div><b>P:</b> ${advice.targetPrefixes.map((target) => escapeHtml(target)).join(' · ')}</div>
+      <div><b>S:</b> ${advice.targetSuffixes.map((target) => escapeHtml(target)).join(' · ')}</div>
+    </div>
+  `;
+
+  return `
+    <div class="ov-advice">
+      <div class="ov-advice-head">Совет по крафту · ${profile}</div>
+      <div class="ov-advice-summary">${escapeHtml(advice.summary)}</div>
+      <ol class="ov-advice-steps">${steps}</ol>
+      ${targets}
+      ${warnings}
+    </div>
+  `;
 }
 
 function renderModifier(group: ModifierGroup): string {
