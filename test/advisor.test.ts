@@ -24,6 +24,22 @@ function group(
   };
 }
 
+function multiGroup(
+  kind: 'prefix' | 'suffix',
+  texts: string[],
+  tier?: number,
+): ModifierGroup {
+  return {
+    source: 'explicit',
+    kind,
+    headerRaw: `{ ${kind} }`,
+    ...(tier !== undefined ? { tier } : {}),
+    tags: [],
+    states: [],
+    lines: texts.map(line),
+  };
+}
+
 function esProperty(value = '171'): ItemProperty {
   return {
     key: 'energyShield',
@@ -137,7 +153,7 @@ describe('analyzeCraft: нательный доспех на ЭЩ', () => {
       modifiers: [
         group('prefix', '100% увеличение энергетического щита', 1),
         group('prefix', '+180 к максимуму энергетического щита', 1),
-        group('prefix', '+200 к максимуму здоровья', 1),
+        group('prefix', '+54 к духу', 1),
         group('suffix', '+40% к сопротивлению огню', 1),
         group('suffix', '+40% к сопротивлению холоду', 1),
         group('suffix', '+40% к сопротивлению молнии', 1),
@@ -261,6 +277,56 @@ describe('ES-тушка: пороги ES, качество и руны', () => {
       makeItem({ ...base, quality: 15, rarity: 'rare', properties: [esProperty('850')] }),
     );
     expect(advice.esBody?.checks.join(' ')).toContain('15% < 20%');
+  });
+
+  it('ES: жизнь любого тира — мусор', () => {
+    const advice = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        modifiers: [group('prefix', '+200 к максимуму здоровья', 1)],
+      }),
+    );
+    expect(advice.mods[0]?.verdict).toBe('bad');
+  });
+
+  it('ES: дух T3 — хороший', () => {
+    const advice = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        modifiers: [group('prefix', '+40 к духу', 3)],
+      }),
+    );
+    expect(advice.mods[0]?.verdict).toBe('good');
+  });
+
+  it('ES: гибрид %ES + жизнь T2 — средний', () => {
+    const advice = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        modifiers: [
+          multiGroup(
+            'prefix',
+            ['10% увеличение энергетического щита', '+20 к максимуму здоровья'],
+            2,
+          ),
+        ],
+      }),
+    );
+    expect(advice.mods[0]?.verdict).toBe('neutral');
+  });
+
+  it('ES: шипы — мусор', () => {
+    const advice = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        modifiers: [group('prefix', 'От 1 до 5 физического урона шипами', 1)],
+      }),
+    );
+    expect(advice.mods[0]?.verdict).toBe('bad');
   });
 
   it('белая ES-база не получает вердикт junk', () => {

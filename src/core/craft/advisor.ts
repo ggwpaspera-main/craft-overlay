@@ -321,13 +321,18 @@ function armourProfile(item: ParsedItem): AdviceProfile {
     buckler: 'Баклер',
   };
   const slot = slotLabel[item.subtype ?? ''] ?? item.itemClass;
-  const prefixLabels = [
-    `% повышение ${defence}`,
-    `+N к ${defence}`,
-    '+N к максимуму здоровья',
-    '+N к духу',
-  ];
-  const prefixFamilies: ModFamily[] = ['defencePercent', 'defenceFlat', 'life', 'spirit'];
+  const hasEs = numericProperty(item, 'energyShield') > 0;
+  const prefixLabels = hasEs
+    ? [`% повышение ${defence}`, `+N к ${defence}`, '+N к духу']
+    : [
+        `% повышение ${defence}`,
+        `+N к ${defence}`,
+        '+N к максимуму здоровья',
+        '+N к духу',
+      ];
+  const prefixFamilies: ModFamily[] = hasEs
+    ? ['defencePercent', 'defenceFlat', 'spirit']
+    : ['defencePercent', 'defenceFlat', 'life', 'spirit'];
   const suffixLabels = [
     '+N% к сопротивлению огню / холоду / молнии',
     '+N% к сопротивлению хаосу',
@@ -575,6 +580,7 @@ function classify(
   profile: AdviceProfile,
   families: ModFamily[],
   tier: number | undefined,
+  esItem: boolean,
 ): { verdict: AdviceVerdict; reason: string } {
   const family = familyOf(text);
   const allFamilies = families.length > 0 ? families : family === 'unknown' ? [] : [family];
@@ -583,6 +589,34 @@ function classify(
       verdict: 'neutral',
       reason: 'мод не распознан — проверь под свой билд',
     };
+  }
+
+  if (esItem) {
+    if (allFamilies.includes('thorns')) {
+      return { verdict: 'bad', reason: 'шипы — мусор для ЭЩ-тушки' };
+    }
+    const esFamilies = allFamilies.filter(
+      (candidate) => candidate === 'defencePercent' || candidate === 'defenceFlat',
+    );
+    const hasLife = allFamilies.includes('life');
+    if (hasLife) {
+      if (esFamilies.length > 0 && tier !== undefined && tier <= 2) {
+        return { verdict: 'neutral', reason: 'гибрид ЭЩ + жизнь T1–T2 — средний' };
+      }
+      return { verdict: 'bad', reason: 'любой тир жизни/гибрида с жизнью — мусор' };
+    }
+    if (esFamilies.length > 0) {
+      const verdict = tierVerdict(tier);
+      if (verdict === 'good') return { verdict, reason: `ES-мод, тир ${tier} — хороший` };
+      if (verdict === 'bad') return { verdict, reason: `ES-мод, тир ${tier} — слабый` };
+      return { verdict, reason: 'ES-мод, тир средний/неизвестен' };
+    }
+    if (allFamilies.includes('spirit')) {
+      const verdict = tierVerdict(tier);
+      if (verdict === 'good') return { verdict, reason: `дух, тир ${tier} — хороший` };
+      if (verdict === 'bad') return { verdict, reason: `дух, тир ${tier} — слабый` };
+      return { verdict, reason: 'дух, тир средний/неизвестен' };
+    }
   }
 
   const targets =
@@ -712,12 +746,13 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
       modifier.source === 'explicit' &&
       (modifier.kind === 'prefix' || modifier.kind === 'suffix'),
   );
+  const esItem = item.category === 'armour' && numericProperty(item, 'energyShield') > 0;
 
   const mods: AdviceMod[] = groups.map((group) => {
     const kind = group.kind === 'prefix' ? 'prefix' : 'suffix';
     const text = groupText(group);
     const families = familiesOfGroup(group);
-    const result = classify(kind, text, profile, families, group.tier);
+    const result = classify(kind, text, profile, families, group.tier, esItem);
     return {
       kind,
       text,
