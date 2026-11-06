@@ -718,3 +718,9 @@ body {
   gap: 6px;
   margin-top: 4px;
 }
+
+.ov-strategy-risk {
+  margin-top: 2px;
+  color: #e06c75;
+  font-size: 11px;
+}

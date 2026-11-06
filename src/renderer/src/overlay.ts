@@ -433,6 +433,10 @@ function formatPrice(exalted: number, divinePrice: number | null): string {
   return `${exalted < 10 ? exalted.toFixed(1) : Math.round(exalted)} ex`;
 }
 
+function formatCount(value: number): string {
+  return value < 10 ? value.toFixed(1) : String(Math.round(value));
+}
+
 function formatChance(strategy: StrategyResult): string {
   if (strategy.probability === 0) return `< ${(100 / strategy.trials).toFixed(2)}%`;
   return `${(strategy.probability * 100).toFixed(strategy.probability < 0.01 ? 2 : 1)}%`;
@@ -442,7 +446,11 @@ function strategyRow(strategy: StrategyResult, path: string, divinePrice: number
   const cost =
     strategy.costPerSuccess === null
       ? 'нет оценки'
-      : `${strategy.incompleteCost ? 'от ' : ''}${formatPrice(strategy.costPerSuccess, divinePrice)}`;
+      : `${strategy.incompleteCost || strategy.basePriceMissing ? 'от ' : ''}${formatPrice(strategy.costPerSuccess, divinePrice)}`;
+  const bases =
+    strategy.basesPerSuccess !== null && strategy.basesPerSuccess > 1
+      ? `Риск потерять предмет ${((1 - strategy.probability) * 100).toFixed(1)}%, в среднем заготовок на успех: ${formatCount(strategy.basesPerSuccess)}${strategy.basePriceMissing ? ' (их цена не задана)' : ''}`
+      : '';
   const uses = strategy.uses
     .map((use) => `${use.label} × ${use.average.toFixed(1)}${use.price === null ? ' (нет цены)' : ''}`)
     .join(', ');
@@ -453,6 +461,7 @@ function strategyRow(strategy: StrategyResult, path: string, divinePrice: number
         <span class="ov-strategy-value">${escapeHtml(formatChance(strategy))} · ${escapeHtml(cost)}</span>
       </div>
       <div class="ov-strategy-uses">${escapeHtml(uses)}</div>
+      ${bases ? `<div class="ov-strategy-risk">${escapeHtml(bases)}</div>` : ''}
       <div class="ov-strategy-foot">
         ${strategy.tag ? `<span class="ov-strategy-tag">${escapeHtml(strategy.tag)}</span>` : '<span></span>'}
         <button class="ov-btn" type="button" data-path="${escapeHtml(path)}">Выбрать</button>
@@ -489,7 +498,7 @@ function targetBlock(report: TargetReport, reportIndex: number, divinePrice: num
     .join('');
   return block(
     `${report.targetName} · ${TARGET_VERDICT[report.verdict]}`,
-    `${reasons}<ul class="ov-target-mods">${mods}</ul>${strategies ? `<ul class="ov-strategies">${strategies}</ul><div class="ov-state-hint">Шанс за попытку · расход на один успех, база не учтена</div>` : ''}`,
+    `${reasons}<ul class="ov-target-mods">${mods}</ul>${strategies ? `<ul class="ov-strategies">${strategies}</ul><div class="ov-state-hint">Шанс на один предмет · расход на успех с учётом потерянных заготовок</div>` : ''}`,
   );
 }
 

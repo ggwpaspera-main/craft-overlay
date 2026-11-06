@@ -20,6 +20,8 @@ export interface PlannerOptions {
   prices: Record<string, number>;
   /** Названия валюты для вывода по id. */
   labels?: Record<string, string>;
+  /** Цена новой заготовки в Exalted: столько стоит потерять предмет при неудаче. */
+  basePrice?: number;
   /** Руны, ядра душ и идолы; без них вставки не считаются. */
   socketables?: SocketablesData;
   /** Вернуть все стратегии, а не три лучших: для сравнения в тестах. */
@@ -51,8 +53,12 @@ export interface StrategyResult {
   /** Точность: сколько попыток симулировано. */
   trials: number;
   costPerAttempt: number;
-  /** Расход на один успех с учётом неудачных попыток; null, если успехов нет. */
+  /** Расход на один успех: валюта всех попыток и потерянные заготовки; null, если успехов нет. */
   costPerSuccess: number | null;
+  /** Сколько заготовок уйдёт в среднем на один успех. */
+  basesPerSuccess: number | null;
+  /** Цена заготовки не задана: при шансе ниже 100% стоимость занижена. */
+  basePriceMissing: boolean;
   /** Хотя бы одна цена неизвестна: стоимость занижена. */
   incompleteCost: boolean;
   uses: CurrencyUse[];
@@ -859,7 +865,13 @@ function runStrategy(
     probability,
     trials,
     costPerAttempt,
-    costPerSuccess: successes > 0 ? costPerAttempt / probability + finishCost : null,
+    // Заготовка в руках уже есть: платим только за те, что потеряны при неудачах.
+    costPerSuccess:
+      successes > 0
+        ? (costPerAttempt + (options.basePrice ?? 0) * (1 - probability)) / probability + finishCost
+        : null,
+    basesPerSuccess: successes > 0 ? 1 / probability : null,
+    basePriceMissing: options.basePrice === undefined && probability < 1,
     incompleteCost: [...list, ...finish].some((use) => use.price === null),
     uses: [...list, ...finish],
     steps,
@@ -879,6 +891,7 @@ function strategiesFor(start: Start, plan: Plan, missingCount: number): Strategy
       sideOmen: true,
       remove: 'annul',
     },
+    { id: 'annul-plain', label: 'Цикл отмена → возвышение без оменов', remove: 'annul' },
     {
       id: 'annul-loop-perfect',
       label: 'Цикл отмена → совершенное возвышение',
@@ -1018,8 +1031,8 @@ function buildSteps(
     steps.push({
       title: remover,
       detail: strategy.sideOmen
-        ? 'Если на стороне нет места или выпал мусор: убрать мод с оменом стороны и вернуться к предыдущему шагу.'
-        : 'Если выпал мусор: заменить его и вернуться к предыдущему шагу.',
+        ? 'Если на стороне нет места или выпал мусор: убрать мод с оменом стороны и вернуться к предыдущему шагу. Омен выбирает сторону, но мод на ней случайный, может уйти и нужный.'
+        : 'Если нужной стороне не хватает места: мод снимается случайно с любой стороны, может уйти и нужный. Затем вернуться к предыдущему шагу.',
       repeat: true,
     });
   }
@@ -1207,6 +1220,8 @@ export function analyzeTarget(
           trials: 1,
           costPerAttempt: 0,
           costPerSuccess: finish.reduce((sum, use) => sum + use.average * (use.price ?? 0), 0),
+          basesPerSuccess: 1,
+          basePriceMissing: false,
           incompleteCost: finish.some((use) => use.price === null),
           uses: finish,
           steps,
@@ -1231,7 +1246,7 @@ export function analyzeTarget(
       .filter((row) => row.target === index)
       .reduce((sum, row) => sum + row.mod.weight * row.chance, 0);
     if (total > 0 && hit > 0) {
-      const percent = `за сферу ${((hit / total) * 100).toFixed(2)}%`;
+      const percent = `с оменом стороны ${((hit / total) * 100).toFixed(2)}%`;
       mod.note = mod.note ? `${percent}, ${mod.note}` : percent;
     }
   });

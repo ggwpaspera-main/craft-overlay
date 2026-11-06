@@ -34,6 +34,7 @@ export interface TargetSummary {
   name: string;
   baseType: string;
   mods: string[];
+  basePrice: number | null;
 }
 
 /** Разбирает образец. shortcut: образец только редкий, у волшебного база спрятана в имени. */
@@ -48,7 +49,7 @@ export function readTarget(text: string): { item: ParsedItem; pool: ModPool } | 
   return { item, pool };
 }
 
-export function summarizeTarget(id: string, text: string): TargetSummary | null {
+export function summarizeTarget(id: string, text: string, basePrice?: number): TargetSummary | null {
   const target = readTarget(text);
   if ('error' in target) return null;
   return {
@@ -56,6 +57,7 @@ export function summarizeTarget(id: string, text: string): TargetSummary | null 
     name: target.item.name ?? target.item.baseType ?? '',
     baseType: target.item.baseType ?? '',
     mods: readTargetMods(target.item, target.pool, 0).map((mod) => mod.text),
+    basePrice: basePrice ?? null,
   };
 }
 
@@ -89,6 +91,7 @@ export function checkItem(text: string, settings: Settings): TargetCheck {
         pool: target.pool,
         tolerance: settings.tolerancePct / 100,
         prices,
+        ...(saved.basePrice !== undefined ? { basePrice: saved.basePrice } : {}),
         labels,
         socketables: socketablesData as SocketablesData,
       }),

@@ -252,7 +252,7 @@ function settingsView(): unknown {
     league: settings.league,
     pricesFetchedAt: settings.prices?.fetchedAt ?? null,
     priceRows: priceRows(settings),
-    targets: settings.targets.flatMap((saved) => summarizeTarget(saved.id, saved.text) ?? []),
+    targets: settings.targets.flatMap((saved) => summarizeTarget(saved.id, saved.text, saved.basePrice) ?? []),
   };
 }
 
@@ -348,6 +348,15 @@ app.whenReady().then(() => {
   });
   ipcMain.handle('target:remove', (_event, id: unknown) => {
     updateSettings({ ...settings, targets: settings.targets.filter((saved) => saved.id !== id) });
+    return settingsView();
+  });
+  ipcMain.handle('target:base-price', (_event, id: unknown, basePrice: unknown) => {
+    const targets = settings.targets.map((saved) => {
+      if (saved.id !== id) return saved;
+      const { basePrice: _old, ...rest } = saved;
+      return { ...rest, basePrice };
+    });
+    updateSettings(sanitizeSettings({ ...settings, targets }));
     return settingsView();
   });
   ipcMain.handle('plan:get', () => settings.activePlan);

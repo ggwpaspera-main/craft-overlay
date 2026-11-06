@@ -4,6 +4,8 @@ import type { ActivePlan } from '../core/target/planner';
 export interface SavedTarget {
   id: string;
   text: string;
+  /** Цена заготовки в Exalted: что теряется при неудачной попытке. */
+  basePrice?: number;
 }
 
 export interface Settings {
@@ -60,12 +62,20 @@ export function sanitizeSettings(raw: unknown): Settings {
   const tolerance = Number(source.tolerancePct);
   const league = typeof source.league === 'string' ? source.league.trim().slice(0, 100) : '';
   const targets = Array.isArray(source.targets)
-    ? source.targets.filter(
-        (entry): entry is SavedTarget =>
-          typeof entry?.id === 'string' &&
-          typeof entry?.text === 'string' &&
-          entry.text.length <= MAX_TARGET_TEXT,
-      )
+    ? source.targets
+        .filter(
+          (entry): entry is SavedTarget =>
+            typeof entry?.id === 'string' &&
+            typeof entry?.text === 'string' &&
+            entry.text.length <= MAX_TARGET_TEXT,
+        )
+        .map(({ id, text, basePrice }) => ({
+          id,
+          text,
+          ...(typeof basePrice === 'number' && Number.isFinite(basePrice) && basePrice >= 0
+            ? { basePrice }
+            : {}),
+        }))
     : [];
   const prices = source.prices;
 

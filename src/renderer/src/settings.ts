@@ -39,7 +39,24 @@ export function initSettings(): void {
         remove.addEventListener('click', () => {
           void window.craft.removeTarget(target.id).then(render);
         });
-        row.append(text, remove);
+        const price = document.createElement('label');
+        price.className = 'target-price';
+        price.textContent = 'Цена заготовки, ex';
+        const priceInput = document.createElement('input');
+        priceInput.type = 'number';
+        priceInput.min = '0';
+        priceInput.step = 'any';
+        priceInput.value = target.basePrice === null ? '' : String(target.basePrice);
+        priceInput.addEventListener('change', () => {
+          const value = priceInput.value === '' ? null : Number(priceInput.value);
+          void window.craft.setBasePrice(target.id, value).then(render);
+        });
+        price.append(priceInput);
+
+        const actions = document.createElement('div');
+        actions.className = 'target-actions';
+        actions.append(price, remove);
+        row.append(text, actions);
         return row;
       }),
     );

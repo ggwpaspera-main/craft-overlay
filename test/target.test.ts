@@ -206,7 +206,7 @@ describe('analyzeTarget', () => {
 
   it('нужный мод показывает шанс одной сферы', () => {
     const report = analyzeTarget(ring('Редкий', 80, FIRE), target, options);
-    expect(report.mods[0]?.note).toMatch(/за сферу \d+\.\d+%/);
+    expect(report.mods[0]?.note).toMatch(/с оменом стороны \d+\.\d+%/);
   });
 
   it('показывает не больше трёх путей: дешёвый, вероятный и запасной', () => {
@@ -231,6 +231,41 @@ describe('analyzeTarget', () => {
     expect(fracture?.uses.map((use) => use.id)).toContain('fracturing-orb');
     const whittling = report.strategies.find((entry) => entry.id === 'chaos-whittling');
     expect(whittling?.uses.map((use) => use.id)).toContain('omen-of-whittling');
+  });
+
+  it('отмена без омена задевает другую сторону, омен её бережёт', () => {
+    const junk = ['Мана', 'Дух', 'Меткость'].map((name, index) => {
+      const line = ['+5 к максимуму маны', '+5 к духу', '+10 к меткости'][index];
+      return `{ Префикс "${name}" (Уровень: 9) }\n${line}`;
+    });
+    const item = ring('Редкий', 80, [...junk, FIRE, COLD].join('\n'));
+    const report = analyzeTarget(item, target, { ...options, trials: 300 });
+    const count = (id: string, use: string): number =>
+      report.strategies.find((entry) => entry.id === id)?.uses.find((entry) => entry.id === use)?.average ?? 0;
+    // Снятый хороший суффикс приходится докрафчивать: возвышений на успех выходит больше.
+    const plain = report.strategies.find((entry) => entry.id === 'annul-plain');
+    const omen = report.strategies.find((entry) => entry.id === 'annul-loop');
+    expect(plain?.uses.some((use) => use.id.startsWith('omen'))).toBe(false);
+    expect(omen?.uses.some((use) => use.id === 'omen-of-sinistral-annulment')).toBe(true);
+    expect(count('annul-plain', 'annul')).toBeGreaterThan(0);
+    expect(plain?.probability ?? 1).toBeLessThan(omen?.probability ?? 0);
+  });
+
+  it('цена заготовки входит в стоимость через риск потери', () => {
+    const item = ring('Редкий', 80, `${FIRE}\n${COLD}`);
+    const free = analyzeTarget(item, target, options).strategies.find((entry) => entry.id === 'exalt');
+    const paid = analyzeTarget(item, target, { ...options, basePrice: 1000 }).strategies.find((entry) => entry.id === 'exalt');
+    const chance = free?.probability ?? 0;
+    expect(free?.basePriceMissing).toBe(true);
+    expect(paid?.basePriceMissing).toBe(false);
+    expect(paid?.basesPerSuccess).toBeCloseTo(1 / chance);
+    expect((paid?.costPerSuccess ?? 0) - (free?.costPerSuccess ?? 0)).toBeCloseTo((1000 * (1 - chance)) / chance);
+  });
+
+  it('гарантированный путь не платит за заготовку', () => {
+    const item = ring('Редкий', 80, `${LIFE}\n${FIRE}\n${COLD}`);
+    const report = analyzeTarget(item, target, { ...options, basePrice: 1000 });
+    expect(report.verdict).toBe('ready');
   });
 
   it('результат воспроизводим', () => {

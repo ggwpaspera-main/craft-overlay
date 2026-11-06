@@ -31,6 +31,21 @@ describe('настройки', () => {
     expect(existsSync(`${path}.bad`)).toBe(true);
   });
 
+  it('цена заготовки сохраняется только корректная', () => {
+    const clean = sanitizeSettings({
+      targets: [
+        { id: 'a', text: 'x', basePrice: 10 },
+        { id: 'b', text: 'y', basePrice: -1 },
+        { id: 'c', text: 'z', basePrice: null },
+      ],
+    });
+    expect(clean.targets).toEqual([
+      { id: 'a', text: 'x', basePrice: 10 },
+      { id: 'b', text: 'y' },
+      { id: 'c', text: 'z' },
+    ]);
+  });
+
   it('значения из окна приводятся к допустимым', () => {
     const clean = sanitizeSettings({
       tolerancePct: 500,
