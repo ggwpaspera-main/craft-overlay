@@ -307,6 +307,44 @@ body {
   line-height: 1.4;
 }
 
+.ov-advice-es {
+  margin-top: 7px;
+  padding: 6px 7px;
+  border: 1px solid rgba(126, 140, 170, 0.28);
+  border-radius: 6px;
+  background: rgba(126, 140, 170, 0.07);
+}
+
+.ov-advice-es-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  color: var(--ov-soft);
+  font-size: 10.5px;
+}
+
+.ov-advice-es-head b {
+  color: #f0e4bd;
+}
+
+.ov-advice-es ul {
+  margin: 4px 0 0;
+  padding-left: 14px;
+  color: var(--ov-muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.ov-advice-es-junk {
+  border-color: rgba(224, 108, 117, 0.4);
+  background: rgba(224, 108, 117, 0.08);
+}
+
+.ov-advice-es-keep {
+  border-color: rgba(126, 198, 153, 0.4);
+  background: rgba(126, 198, 153, 0.08);
+}
+
 .ov-advice-steps {
   margin: 6px 0 0;
   padding-left: 16px;

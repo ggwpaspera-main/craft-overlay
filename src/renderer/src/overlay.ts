@@ -346,6 +346,18 @@ function renderAdvice(advice: CraftAdvice): string {
     .map((step) => `<li>${escapeHtml(step)}</li>`)
     .join('');
 
+  const esBlock = advice.esBody
+    ? `<div class="ov-advice-es ov-advice-es-${escapeHtml(advice.esBody.verdict)}">
+        <div class="ov-advice-es-head">
+          <span>ES <b>${advice.esBody.es}</b></span>
+          <span>${advice.esBody.baseTierLabel ? escapeHtml(advice.esBody.baseTierLabel) : 'база вне тиров'}</span>
+          <span>${advice.esBody.quality === null ? 'качество ?' : `качество ${advice.esBody.quality}%`}</span>
+          <span>руны ${advice.esBody.runes}/${advice.esBody.sockets}</span>
+        </div>
+        <ul>${advice.esBody.checks.map((check) => `<li>${escapeHtml(check)}</li>`).join('')}</ul>
+      </div>`
+    : '';
+
   const targets = `
     <div class="ov-advice-targets">
       <div><b>P:</b> ${advice.targetPrefixes.map((target) => escapeHtml(target)).join(' · ')}</div>
@@ -357,6 +369,7 @@ function renderAdvice(advice: CraftAdvice): string {
     <div class="ov-advice">
       <div class="ov-advice-head">Совет по крафту · ${profile}</div>
       <div class="ov-advice-summary">${escapeHtml(advice.summary)}</div>
+      ${esBlock}
       <ol class="ov-advice-steps">${steps}</ol>
       ${targets}
       ${warnings}

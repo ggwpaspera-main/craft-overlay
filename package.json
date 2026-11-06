@@ -10,6 +10,7 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "parse": "tsx src/cli.ts",
+    "filter:priors": "node scripts/build-filter-priors.mjs",
     "typecheck": "tsc --noEmit",
     "prebuild": "npm run typecheck",
     "build": "node scripts/build.mjs",

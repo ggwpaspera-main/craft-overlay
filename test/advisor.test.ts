@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeCraft } from '../src/core/craft/advisor';
+import { filterBaseInfo } from '../src/core/filter/priors';
 import { parseItemText } from '../src/core/parser';
 import type { ItemProperty, ModifierGroup, ParsedItem, StatLine } from '../src/core/types';
 
@@ -42,7 +43,7 @@ function makeItem(overrides: Partial<ParsedItem> = {}): ParsedItem {
     rarity: 'normal',
     name: 'Нечестивое облачение',
     itemLevel: 80,
-    properties: [esProperty()],
+    properties: [esProperty('850')],
     requirements: [],
     sockets: [],
     grantedSkills: [],
@@ -213,5 +214,66 @@ describe('analyzeCraft: распознавание семейств модов',
   ] as const)('%s', (_name, slot, kind, text, verdict) => {
     const item = makeItem({ ...slot, rarity: 'magic', properties: [], modifiers: [group(kind, text)] });
     expect(analyzeCraft(item).mods[0]?.verdict).toBe(verdict);
+  });
+});
+
+describe('ES-тушка: пороги ES, качество и руны', () => {
+  const base = {
+    baseType: 'Нечестивое облачение',
+    quality: 26,
+    sockets: ['S', 'S'],
+    runes: [line('+14% к сопротивлению огню')],
+  };
+
+  it('ES < 800 — неликвид', () => {
+    const advice = analyzeCraft(
+      makeItem({ ...base, rarity: 'rare', properties: [esProperty('750')] }),
+    );
+    expect(advice.esBody?.verdict).toBe('junk');
+    expect(advice.esBody?.baseTier).toBe('t1');
+    expect(advice.summary).toContain('неликвид');
+    expect(advice.steps[0]).toContain('800');
+  });
+
+  it('ES 800–899 — пойдёт', () => {
+    const advice = analyzeCraft(
+      makeItem({ ...base, rarity: 'rare', properties: [esProperty('850')] }),
+    );
+    expect(advice.esBody?.verdict).toBe('playable');
+    expect(advice.summary).toContain('800–900');
+  });
+
+  it('ES ≥ 900 — не трогать', () => {
+    const advice = analyzeCraft(
+      makeItem({ ...base, rarity: 'rare', properties: [esProperty('950')] }),
+    );
+    expect(advice.esBody?.verdict).toBe('keep');
+    expect(advice.summary).toContain('не трогать');
+  });
+
+  it('качество ниже 20% попадает в проверки', () => {
+    const advice = analyzeCraft(
+      makeItem({ ...base, quality: 15, rarity: 'rare', properties: [esProperty('850')] }),
+    );
+    expect(advice.esBody?.checks.join(' ')).toContain('15% < 20%');
+  });
+
+  it('белая ES-база не получает вердикт junk', () => {
+    const advice = analyzeCraft(
+      makeItem({ ...base, rarity: 'normal', quality: undefined, properties: [esProperty('171')] }),
+    );
+    expect(advice.esBody?.verdict).toBe('white');
+    expect(advice.summary).toContain('Белая база');
+  });
+});
+
+describe('фильтр NeverSink: приоры баз', () => {
+  it('Vile Robe распознаётся как T1', () => {
+    expect(filterBaseInfo('Нечестивое облачение')?.tier).toBe('t1');
+    expect(filterBaseInfo('Vile Robe')?.tier).toBe('t1');
+  });
+
+  it('неизвестная база не падает', () => {
+    expect(filterBaseInfo('Нет такой базы')).toBeNull();
   });
 });

@@ -1,0 +1,3271 @@
+{
+ "meta": {
+  "source": "NeverSink-Filter-for-PoE2",
+  "version": "VERSION:  0.10.4",
+  "type": "TYPE:     3-STRICT",
+  "style": "STYLE:    DEFAULT",
+  "license": "MIT",
+  "sourceUrl": "https://github.com/NeverSinkDev/NeverSink-Filter-for-PoE2",
+  "generatedAt": "2026-11-06T17:26:19.393Z",
+  "lineCount": 9038,
+  "activeRules": 518
+ },
+ "bases": [
+  {
+   "tier": "t1",
+   "en": "Vile Robe",
+   "ru": "Нечестивое облачение",
+   "slug": "Vile_Robe",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Ancestral Tiara",
+   "ru": "Фамильная тиара",
+   "slug": "Ancestral_Tiara",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Sinister Quarterstaff",
+   "ru": "Зловещий боевой посох",
+   "slug": "Sinister_Quarterstaff",
+   "class": "Боевые посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Obliterator Bow",
+   "ru": "Лук изничтожителя",
+   "slug": "Obliterator_Bow",
+   "class": "Луки",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Daggerfoot Shoes",
+   "ru": "Ботинки с кинжалом",
+   "slug": "Daggerfoot_Shoes",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Sekhema Sandals",
+   "ru": "Сандалии Сехемы",
+   "slug": "Sekhema_Sandals",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Sleek Jacket",
+   "ru": "Дублёный плащ",
+   "slug": "Sleek_Jacket",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Gold Ring",
+   "ru": "Золотое кольцо",
+   "slug": "Gold_Ring",
+   "class": "Кольца",
+   "category": "jewellery"
+  },
+  {
+   "tier": "t1",
+   "en": "Gold Amulet",
+   "ru": "Золотой амулет",
+   "slug": "Gold_Amulet",
+   "class": "Амулеты",
+   "category": "jewellery"
+  },
+  {
+   "tier": "t1",
+   "en": "Prismatic Ring",
+   "ru": "Радужное кольцо",
+   "slug": "Prismatic_Ring",
+   "class": "Кольца",
+   "category": "jewellery"
+  },
+  {
+   "tier": "t1",
+   "en": "Solar Amulet",
+   "ru": "Солнечный амулет",
+   "slug": "Solar_Amulet",
+   "class": "Амулеты",
+   "category": "jewellery"
+  },
+  {
+   "tier": "t1",
+   "en": "Warmonger Bow",
+   "ru": "Лук зачинщика",
+   "slug": "Warmonger_Bow",
+   "class": "Луки",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Bone Wand",
+   "ru": "Костяной жезл",
+   "slug": "Bone_Wand",
+   "class": "Жезлы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Withered Wand",
+   "ru": "Увядший жезл",
+   "slug": "Withered_Wand",
+   "class": "Жезлы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Voltaic Staff",
+   "ru": "Гальванический посох",
+   "slug": "Voltaic_Staff",
+   "class": "Посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Paralysing Staff",
+   "ru": "Парализующий посох",
+   "slug": "Paralysing_Staff",
+   "class": "Посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Gelid Staff",
+   "ru": "Студёный посох",
+   "slug": "Gelid_Staff",
+   "class": "Посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Attuned Wand",
+   "ru": "Вытягивающий жезл",
+   "slug": "Attuned_Wand",
+   "class": "Жезлы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Siphoning Wand",
+   "ru": "Переливающий жезл",
+   "slug": "Siphoning_Wand",
+   "class": "Жезлы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Chiming Staff",
+   "ru": "Звенящий посох",
+   "slug": "Chiming_Staff",
+   "class": "Посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Roaring Staff",
+   "ru": "Ревущий посох",
+   "slug": "Roaring_Staff",
+   "class": "Посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Sanctified Staff",
+   "ru": "Освящённый посох",
+   "slug": "Sanctified_Staff",
+   "class": "Посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Lunar Quarterstaff",
+   "ru": "Боевой посох полнолуния",
+   "slug": "Lunar_Quarterstaff",
+   "class": "Боевые посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Razor Quarterstaff",
+   "ru": "Боевой посох с лезвием",
+   "slug": "Razor_Quarterstaff",
+   "class": "Боевые посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Skullcrusher Quarterstaff",
+   "ru": "Боевой посох крушителя черепов",
+   "slug": "Skullcrusher_Quarterstaff",
+   "class": "Боевые посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Flying Spear",
+   "ru": "Летящее копьё",
+   "slug": "Flying_Spear",
+   "class": "Копья",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Siege Crossbow",
+   "ru": "Осадный самострел",
+   "slug": "Siege_Crossbow",
+   "class": "Самострелы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Striking Quarterstaff",
+   "ru": "Ударный боевой посох",
+   "slug": "Striking_Quarterstaff",
+   "class": "Боевые посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Spiny Talisman",
+   "ru": "Колючий талисман",
+   "slug": "Spiny_Talisman",
+   "class": "Талисманы",
+   "category": "jewellery"
+  },
+  {
+   "tier": "t1",
+   "en": "Ashen Staff",
+   "ru": "Пепельный посох",
+   "slug": "Ashen_Staff",
+   "class": "Посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Pyrophyte Staff",
+   "ru": "Пирофитовый посох",
+   "slug": "Pyrophyte_Staff",
+   "class": "Посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Desolate Crossbow",
+   "ru": "Самострел опустошения",
+   "slug": "Desolate_Crossbow",
+   "class": "Самострелы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Gemini Crossbow",
+   "ru": "Двойной самострел",
+   "slug": "Gemini_Crossbow",
+   "class": "Самострелы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Jade Talisman",
+   "ru": "Нефритовый талисман",
+   "slug": "Jade_Talisman",
+   "class": "Талисманы",
+   "category": "jewellery"
+  },
+  {
+   "tier": "t1",
+   "en": "Grand Spear",
+   "ru": "Величественное копьё",
+   "slug": "Grand_Spear",
+   "class": "Копья",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Akoyan Spear",
+   "ru": "Копьё Акойи",
+   "slug": "Akoyan_Spear",
+   "class": "Копья",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Twig Circlet",
+   "ru": "Венок из ветвей",
+   "slug": "Twig_Circlet",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Wicker Tiara",
+   "ru": "Тиара из прутьев",
+   "slug": "Wicker_Tiara",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Beaded Circlet",
+   "ru": "Обруч с чётками",
+   "slug": "Beaded_Circlet",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Chain Tiara",
+   "ru": "Цепная тиара",
+   "slug": "Chain_Tiara",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Feathered Tiara",
+   "ru": "Тиара с перьями",
+   "slug": "Feathered_Tiara",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Gold Circlet",
+   "ru": "Венец из золота",
+   "slug": "Gold_Circlet",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Jade Tiara",
+   "ru": "Нефритовая тиара",
+   "slug": "Jade_Tiara",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Vermeil Circlet",
+   "ru": "Вермелевый обруч",
+   "slug": "Vermeil_Circlet",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Sandsworn Tiara",
+   "ru": "Тиара хранителя песков",
+   "slug": "Sandsworn_Tiara",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Jungle Tiara",
+   "ru": "Тиара джунглей",
+   "slug": "Jungle_Tiara",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Skycrown Tiara",
+   "ru": "Тиара небес",
+   "slug": "Skycrown_Tiara",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Sorcerous Tiara",
+   "ru": "Чародейская тиара",
+   "slug": "Sorcerous_Tiara",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Kamasan Tiara",
+   "ru": "Тиара Камасы",
+   "slug": "Kamasan_Tiara",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Torn Gloves",
+   "ru": "Рваные перчатки",
+   "slug": "Torn_Gloves",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Sombre Gloves",
+   "ru": "Тёмные перчатки",
+   "slug": "Sombre_Gloves",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Stitched Gloves",
+   "ru": "Сшитые перчатки",
+   "slug": "Stitched_Gloves",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Jewelled Gloves",
+   "ru": "Инкрустированные перчатки",
+   "slug": "Jewelled_Gloves",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Intricate Gloves",
+   "ru": "Затейливые перчатки",
+   "slug": "Intricate_Gloves",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Pauascale Gloves",
+   "ru": "Перчатки с перламутром",
+   "slug": "Pauascale_Gloves",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Embroidered Gloves",
+   "ru": "Расшитые перчатки",
+   "slug": "Embroidered_Gloves",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Baroque Gloves",
+   "ru": "Вычурные перчатки",
+   "slug": "Baroque_Gloves",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Gold Gloves",
+   "ru": "Золотые перчатки",
+   "slug": "Gold_Gloves",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Sirenscale Gloves",
+   "ru": "Перчатки из чешуи сирены",
+   "slug": "Sirenscale_Gloves",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Grim Gloves",
+   "ru": "Мрачные перчатки",
+   "slug": "Grim_Gloves",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Opulent Gloves",
+   "ru": "Богатые перчатки",
+   "slug": "Opulent_Gloves",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Vaal Gloves",
+   "ru": "Перчатки ваал",
+   "slug": "Vaal_Gloves",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Straw Sandals",
+   "ru": "Соломенные сандалии",
+   "slug": "Straw_Sandals",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Wrapped Sandals",
+   "ru": "Плетёные сандалии",
+   "slug": "Wrapped_Sandals",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Lattice Sandals",
+   "ru": "Сетчатые сандалии",
+   "slug": "Lattice_Sandals",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Silk Slippers",
+   "ru": "Шёлковые тапочки",
+   "slug": "Silk_Slippers",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Feathered Sandals",
+   "ru": "Пернатые сандалии",
+   "slug": "Feathered_Sandals",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Flax Sandals",
+   "ru": "Льняные сандалии",
+   "slug": "Flax_Sandals",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Elegant Slippers",
+   "ru": "Нарядные тапочки",
+   "slug": "Elegant_Slippers",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Dunerunner Sandals",
+   "ru": "Сандалии гонца дюн",
+   "slug": "Dunerunner_Sandals",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Bound Sandals",
+   "ru": "Сандалии с обмотками",
+   "slug": "Bound_Sandals",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Luxurious Slippers",
+   "ru": "Богатые тапочки",
+   "slug": "Luxurious_Slippers",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Sandsworn Sandals",
+   "ru": "Сандалии хранителя песков",
+   "slug": "Sandsworn_Sandals",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Tattered Robe",
+   "ru": "Рваное платье",
+   "slug": "Tattered_Robe",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Feathered Robe",
+   "ru": "Наряд из перьев",
+   "slug": "Feathered_Robe",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Hexer's Robe",
+   "ru": "Ведьмино облачение",
+   "slug": "Hexers_Robe",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Bone Raiment",
+   "ru": "Костяное облачение",
+   "slug": "Bone_Raiment",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Silk Robe",
+   "ru": "Шёлковое платье",
+   "slug": "Silk_Robe",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Keth Raiment",
+   "ru": "Кетское одеяние",
+   "slug": "Keth_Raiment",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Votive Raiment",
+   "ru": "Обетное одеяние",
+   "slug": "Votive_Raiment",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Altar Robe",
+   "ru": "Алтарное одеяние",
+   "slug": "Altar_Robe",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Elementalist Robe",
+   "ru": "Камзол мага стихий",
+   "slug": "Elementalist_Robe",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Mystic Raiment",
+   "ru": "Наряд мистика",
+   "slug": "Mystic_Raiment",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "River Raiment",
+   "ru": "Одеяние истока",
+   "slug": "River_Raiment",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Adherent's Raiment",
+   "ru": "Одеяние приверженца",
+   "slug": "Adherents_Raiment",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Ceremonial Robe",
+   "ru": "Церемониальное одеяние",
+   "slug": "Ceremonial_Robe",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Feathered Raiment",
+   "ru": "Оперённое одеяние",
+   "slug": "Feathered_Raiment",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Flowing Raiment",
+   "ru": "Струящееся одеяние",
+   "slug": "Flowing_Raiment",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Sacramental Robe",
+   "ru": "Одеяние причастия",
+   "slug": "Sacramental_Robe",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Twig Focus",
+   "ru": "Фокус из веток",
+   "slug": "Twig_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Woven Focus",
+   "ru": "Плетёный фокус",
+   "slug": "Woven_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Antler Focus",
+   "ru": "Фокус из рогов",
+   "slug": "Antler_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Engraved Focus",
+   "ru": "Резной фокус",
+   "slug": "Engraved_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Tonal Focus",
+   "ru": "Мелодичный фокус",
+   "slug": "Tonal_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Crystal Focus",
+   "ru": "Кристальный фокус",
+   "slug": "Crystal_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Voodoo Focus",
+   "ru": "Фокус вуду",
+   "slug": "Voodoo_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Plumed Focus",
+   "ru": "Павлиний фокус",
+   "slug": "Plumed_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Runed Focus",
+   "ru": "Рунический фокус",
+   "slug": "Runed_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Whorl Focus",
+   "ru": "Витой фокус",
+   "slug": "Whorl_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Arrayed Focus",
+   "ru": "Узорный фокус",
+   "slug": "Arrayed_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Cultist Focus",
+   "ru": "Фокус культиста",
+   "slug": "Cultist_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Hallowed Focus",
+   "ru": "Освящённый фокус",
+   "slug": "Hallowed_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Druidic Focus",
+   "ru": "Друидский фокус",
+   "slug": "Druidic_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Leyline Focus",
+   "ru": "Фокус лучей",
+   "slug": "Leyline_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Sacred Focus",
+   "ru": "Священный фокус",
+   "slug": "Sacred_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Tasalian Focus",
+   "ru": "Фокус Тасалио",
+   "slug": "Tasalian_Focus",
+   "class": "Фокусы",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Rusted Greathelm",
+   "ru": "Ржавый большой шлем",
+   "slug": "Rusted_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Soldier Greathelm",
+   "ru": "Большой шлем солдата",
+   "slug": "Soldier_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Wrapped Greathelm",
+   "ru": "Обмотанный большой шлем",
+   "slug": "Wrapped_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Spired Greathelm",
+   "ru": "Остроконечный большой шлем",
+   "slug": "Spired_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Elite Greathelm",
+   "ru": "Большой шлем элиты",
+   "slug": "Elite_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Warrior Greathelm",
+   "ru": "Большой шлем воина",
+   "slug": "Warrior_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Commander Greathelm",
+   "ru": "Большой шлем командира",
+   "slug": "Commander_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Fierce Greathelm",
+   "ru": "Свирепый большой шлем",
+   "slug": "Fierce_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Elegant Greathelm",
+   "ru": "Элегантный большой шлем",
+   "slug": "Elegant_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Noble Greathelm",
+   "ru": "Большой шлем дворянина",
+   "slug": "Noble_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Imperial Greathelm",
+   "ru": "Имперский большой шлем",
+   "slug": "Imperial_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Warmonger Greathelm",
+   "ru": "Большой шлем зачинщика",
+   "slug": "Warmonger_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Masked Greathelm",
+   "ru": "Большой шлем с маской",
+   "slug": "Masked_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Paragon Greathelm",
+   "ru": "Большой шлем эталона",
+   "slug": "Paragon_Greathelm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Stocky Mitts",
+   "ru": "Толстые рукавицы",
+   "slug": "Stocky_Mitts",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Riveted Mitts",
+   "ru": "Клёпаные рукавицы",
+   "slug": "Riveted_Mitts",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Tempered Mitts",
+   "ru": "Закалённые рукавицы",
+   "slug": "Tempered_Mitts",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Bolstered Mitts",
+   "ru": "Укреплённые рукавицы",
+   "slug": "Bolstered_Mitts",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Moulded Mitts",
+   "ru": "Литые рукавицы",
+   "slug": "Moulded_Mitts",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Detailed Mitts",
+   "ru": "Украшенные рукавицы",
+   "slug": "Detailed_Mitts",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Ancient Mitts",
+   "ru": "Старинные рукавицы",
+   "slug": "Ancient_Mitts",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Feathered Mitts",
+   "ru": "Оперённые рукавицы",
+   "slug": "Feathered_Mitts",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Massive Mitts",
+   "ru": "Массивные рукавицы",
+   "slug": "Massive_Mitts",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Knightly Mitts",
+   "ru": "Рыцарские рукавицы",
+   "slug": "Knightly_Mitts",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Ornate Mitts",
+   "ru": "Фактурные рукавицы",
+   "slug": "Ornate_Mitts",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Vaal Mitts",
+   "ru": "Рукавицы ваал",
+   "slug": "Vaal_Mitts",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Rough Greaves",
+   "ru": "Грубые поножи",
+   "slug": "Rough_Greaves",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Iron Greaves",
+   "ru": "Железные поножи",
+   "slug": "Iron_Greaves",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Bronze Greaves",
+   "ru": "Бронзовые поножи",
+   "slug": "Bronze_Greaves",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Trimmed Greaves",
+   "ru": "Подогнанные поножи",
+   "slug": "Trimmed_Greaves",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Stone Greaves",
+   "ru": "Каменные поножи",
+   "slug": "Stone_Greaves",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Reefsteel Greaves",
+   "ru": "Стальные рифлёные поножи",
+   "slug": "Reefsteel_Greaves",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Elegant Greaves",
+   "ru": "Элегантные поножи",
+   "slug": "Elegant_Greaves",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Carved Greaves",
+   "ru": "Резные поножи",
+   "slug": "Carved_Greaves",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Tasalian Greaves",
+   "ru": "Поножи Тасалио",
+   "slug": "Tasalian_Greaves",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Bulwark Greaves",
+   "ru": "Поножи бастиона",
+   "slug": "Bulwark_Greaves",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Ornate Greaves",
+   "ru": "Украшенные поножи",
+   "slug": "Ornate_Greaves",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Vaal Greaves",
+   "ru": "Поножи ваал",
+   "slug": "Vaal_Greaves",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Rusted Cuirass",
+   "ru": "Ржавая кираса",
+   "slug": "Rusted_Cuirass",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Fur Plate",
+   "ru": "Меховой доспех",
+   "slug": "Fur_Plate",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Iron Cuirass",
+   "ru": "Железная кираса",
+   "slug": "Iron_Cuirass",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Raider Plate",
+   "ru": "Рейдерский нагрудник",
+   "slug": "Raider_Plate",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Maraketh Cuirass",
+   "ru": "Маракетская кираса",
+   "slug": "Maraketh_Cuirass",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Steel Plate",
+   "ru": "Стальной доспех",
+   "slug": "Steel_Plate",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Full Plate",
+   "ru": "Полные латы",
+   "slug": "Full_Plate",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Vaal Cuirass",
+   "ru": "Нагрудник ваал",
+   "slug": "Vaal_Cuirass",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Juggernaut Plate",
+   "ru": "Доспех покорителя",
+   "slug": "Juggernaut_Plate",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Chieftain Cuirass",
+   "ru": "Доспех вождя",
+   "slug": "Chieftain_Cuirass",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Elegant Plate",
+   "ru": "Элегантный доспех",
+   "slug": "Elegant_Plate",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Heavy Plate",
+   "ru": "Тяжёлые латы",
+   "slug": "Heavy_Plate",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Stone Cuirass",
+   "ru": "Каменный нагрудник",
+   "slug": "Stone_Cuirass",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Warlord Cuirass",
+   "ru": "Кираса вождя",
+   "slug": "Warlord_Cuirass",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Soldier Cuirass",
+   "ru": "Солдатская кираса",
+   "slug": "Soldier_Cuirass",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Ornate Plate",
+   "ru": "Украшенный доспех",
+   "slug": "Ornate_Plate",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Utzaal Cuirass",
+   "ru": "Нагрудник из Утцааля",
+   "slug": "Utzaal_Cuirass",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t1",
+   "en": "Splintered Tower Shield",
+   "ru": "Обшарпанный ростовой щит",
+   "slug": "Splintered_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Painted Tower Shield",
+   "ru": "Расписной ростовой щит",
+   "slug": "Painted_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Braced Tower Shield",
+   "ru": "Окованный ростовой щит",
+   "slug": "Braced_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Barricade Tower Shield",
+   "ru": "Баррикадный ростовой щит",
+   "slug": "Barricade_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Effigial Tower Shield",
+   "ru": "Тотемный ростовой щит",
+   "slug": "Effigial_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Rampart Tower Shield",
+   "ru": "Бастионный ростовой щит",
+   "slug": "Rampart_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Heraldric Tower Shield",
+   "ru": "Геральдический ростовой щит",
+   "slug": "Heraldric_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Stone Tower Shield",
+   "ru": "Каменный ростовой щит",
+   "slug": "Stone_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Crucible Tower Shield",
+   "ru": "Закалённый ростовой щит",
+   "slug": "Crucible_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Ancestor Tower Shield",
+   "ru": "Ростовой щит предков",
+   "slug": "Ancestor_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Bulwark Tower Shield",
+   "ru": "Фортовый ростовой щит",
+   "slug": "Bulwark_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Noble Tower Shield",
+   "ru": "Ростовой щит дворянина",
+   "slug": "Noble_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Goldworked Tower Shield",
+   "ru": "Покрытый золотом ростовой щит",
+   "slug": "Goldworked_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Tawhoan Tower Shield",
+   "ru": "Ростовой щит Тахоа",
+   "slug": "Tawhoan_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Royal Tower Shield",
+   "ru": "Царский ростовой щит",
+   "slug": "Royal_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Fortress Tower Shield",
+   "ru": "Крепостной ростовой щит",
+   "slug": "Fortress_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Vaal Tower Shield",
+   "ru": "Ростовой щит ваал",
+   "slug": "Vaal_Tower_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "t1",
+   "en": "Dueling Wand",
+   "ru": "Дуэльный жезл",
+   "slug": "Dueling_Wand",
+   "class": "Жезлы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t1",
+   "en": "Reaping Staff",
+   "ru": "Пожинающий посох",
+   "slug": "Reaping_Staff",
+   "class": "Посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Shrine Sceptre",
+   "ru": "Скипетр святыни",
+   "slug": "Shrine_Sceptre",
+   "class": "Скипетры",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Pelage Targe",
+   "ru": "Отделанный мехом тарджет",
+   "slug": "Pelage_Targe",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ruby",
+   "ru": "Рубин",
+   "slug": "Ruby",
+   "class": "Самоцветы",
+   "category": "jewel"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Tribal Mask",
+   "ru": "Племенная маска",
+   "slug": "Tribal_Mask",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Fine Bracers",
+   "ru": "Искусные наручи",
+   "slug": "Fine_Bracers",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Armoured Cap",
+   "ru": "Защитный капюшон",
+   "slug": "Armoured_Cap",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Abyssal Signet",
+   "ru": "Печатка Бездны",
+   "slug": "Abyssal_Signet",
+   "class": "Кольца",
+   "category": "jewellery"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Closed Helm",
+   "ru": "Закрытый шлем",
+   "slug": "Closed_Helm",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Grand Cuisses",
+   "ru": "Великолепные набедренники",
+   "slug": "Grand_Cuisses",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Grand Visage",
+   "ru": "Великолепный лик",
+   "slug": "Grand_Visage",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Penetrating Quiver",
+   "ru": "Колчан пронзающих стрел",
+   "slug": "Penetrating_Quiver",
+   "class": "Колчаны",
+   "category": "offhand"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Primal Markings",
+   "ru": "Первобытный узор",
+   "slug": "Primal_Markings",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ravenous Staff",
+   "ru": "Прожорливый посох",
+   "slug": "Ravenous_Staff",
+   "class": "Посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Spiritbone Crown",
+   "ru": "Корона из костей духа",
+   "slug": "Spiritbone_Crown",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ultimate Life Flask",
+   "ru": "Совершенный флакон жизни",
+   "slug": "Ultimate_Life_Flask",
+   "class": "Флаконы жизни",
+   "category": "flask"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Venerable Defender",
+   "ru": "Почётный защитник",
+   "slug": "Venerable_Defender",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Visceral Quiver",
+   "ru": "Колчан жестоких стрел",
+   "slug": "Visceral_Quiver",
+   "class": "Колчаны",
+   "category": "offhand"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Wyrm Quarterstaff",
+   "ru": "Боевой посох змия",
+   "slug": "Wyrm_Quarterstaff",
+   "class": "Боевые посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Spiral Wraps",
+   "ru": "Витые обмотки",
+   "slug": "Spiral_Wraps",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Grand Regalia",
+   "ru": "Великолепное облачение",
+   "slug": "Grand_Regalia",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ultimate Mana Flask",
+   "ru": "Совершенный флакон маны",
+   "slug": "Ultimate_Mana_Flask",
+   "class": "Флаконы маны",
+   "category": "flask"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ancient Mail",
+   "ru": "Древняя кольчуга",
+   "slug": "Ancient_Mail",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Flanged Mace",
+   "ru": "Оребрённый шестопёр",
+   "slug": "Flanged_Mace",
+   "class": "Одноручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Tenebrous Crown",
+   "ru": "Тусклая корона",
+   "slug": "Tenebrous_Crown",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Transcendent Mana Flask",
+   "ru": "Возвышенный флакон маны",
+   "slug": "Transcendent_Mana_Flask",
+   "class": "Флаконы маны",
+   "category": "flask"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Veridical Chain",
+   "ru": "Цепочка истины",
+   "slug": "Veridical_Chain",
+   "class": "Амулеты",
+   "category": "jewellery"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ancient Leggings",
+   "ru": "Древние сапоги",
+   "slug": "Ancient_Leggings",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Warding Quarterstaff",
+   "ru": "Барьерный боевой посох",
+   "slug": "Warding_Quarterstaff",
+   "class": "Боевые посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Cinched Boots",
+   "ru": "Сапоги со шнуровкой",
+   "slug": "Cinched_Boots",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Aberrant Sledge",
+   "ru": "Искажённый молот",
+   "slug": "Aberrant_Sledge",
+   "class": "Двуручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Heartwood Shortbow",
+   "ru": "Короткий лук из ядровой древесины",
+   "slug": "Heartwood_Shortbow",
+   "class": "Луки",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Pronged Spear",
+   "ru": "Двузубое копьё",
+   "slug": "Pronged_Spear",
+   "class": "Копья",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Twisted Wand",
+   "ru": "Кручёный жезл",
+   "slug": "Twisted_Wand",
+   "class": "Жезлы",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Engraved Bracers",
+   "ru": "Резные наручи",
+   "slug": "Engraved_Bracers",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Perching Staff",
+   "ru": "Посох насеста",
+   "slug": "Perching_Staff",
+   "class": "Посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ornate Gauntlets",
+   "ru": "Изысканные перчатки",
+   "slug": "Ornate_Gauntlets",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Stoic Sceptre",
+   "ru": "Скипетр стоика",
+   "slug": "Stoic_Sceptre",
+   "class": "Скипетры",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Glacial Fortress",
+   "ru": "Ледяная крепость",
+   "slug": "Glacial_Fortress",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Exquisite Vest",
+   "ru": "Изысканный нагрудник",
+   "slug": "Exquisite_Vest",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Grand Manchettes",
+   "ru": "Великолепные манжеты",
+   "slug": "Grand_Manchettes",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Sacrificial Regalia",
+   "ru": "Жертвенное облачение",
+   "slug": "Sacrificial_Regalia",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ancient Visor",
+   "ru": "Древний забранный шлем",
+   "slug": "Ancient_Visor",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Reflecting Staff",
+   "ru": "Отражающий посох",
+   "slug": "Reflecting_Staff",
+   "class": "Посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Array Buckler",
+   "ru": "Колющий баклер",
+   "slug": "Array_Buckler",
+   "class": "Баклеры",
+   "category": "offhand"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Conqueror Plate",
+   "ru": "Доспех завоевателя",
+   "slug": "Conqueror_Plate",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Morning Star",
+   "ru": "Моргенштерн",
+   "slug": "Morning_Star",
+   "class": "Одноручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Winged Spear",
+   "ru": "Крылатое копьё",
+   "slug": "Winged_Spear",
+   "class": "Копья",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Viper Cap",
+   "ru": "Голова гадюки",
+   "slug": "Viper_Cap",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Armoured Vest",
+   "ru": "Бригантный доспех",
+   "slug": "Armoured_Vest",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Covert Hood",
+   "ru": "Капюшон агента",
+   "slug": "Covert_Hood",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Torment Club",
+   "ru": "Булава мучений",
+   "slug": "Torment_Club",
+   "class": "Одноручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Totemic Greatclub",
+   "ru": "Тотемная палица",
+   "slug": "Totemic_Greatclub",
+   "class": "Двуручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Heavy Crown",
+   "ru": "Тяжёлая корона",
+   "slug": "Heavy_Crown",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Death Mask",
+   "ru": "Маска смерти",
+   "slug": "Death_Mask",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Crude Bow",
+   "ru": "Грубый лук",
+   "slug": "Crude_Bow",
+   "class": "Луки",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ornate Belt",
+   "ru": "Декорированный ремень",
+   "slug": "Ornate_Belt",
+   "class": "Обереги",
+   "category": "charm"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Magus Tiara",
+   "ru": "Тиара волшебника",
+   "slug": "Magus_Tiara",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Martyr Crown",
+   "ru": "Корона мученика",
+   "slug": "Martyr_Crown",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Havoc Raiment",
+   "ru": "Одежды хаоса",
+   "slug": "Havoc_Raiment",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ironclad Vestments",
+   "ru": "Ратное облачение",
+   "slug": "Ironclad_Vestments",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Plated Vestments",
+   "ru": "Пластинчатое облачение",
+   "slug": "Plated_Vestments",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Forked Spear",
+   "ru": "Раздвоенное копьё",
+   "slug": "Forked_Spear",
+   "class": "Копья",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Iron Crown",
+   "ru": "Железная корона",
+   "slug": "Iron_Crown",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Giant Maul",
+   "ru": "Огромный молот",
+   "slug": "Giant_Maul",
+   "class": "Двуручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Champion Cuirass",
+   "ru": "Доспех чемпиона",
+   "slug": "Champion_Cuirass",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Corvus Mantle",
+   "ru": "Вороново облачение",
+   "slug": "Corvus_Mantle",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Enlightened Robe",
+   "ru": "Наряд просвещённого",
+   "slug": "Enlightened_Robe",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Shaman Mantle",
+   "ru": "Наряд шамана",
+   "slug": "Shaman_Mantle",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Permafrost Staff",
+   "ru": "Посох вечной мерзлоты",
+   "slug": "Permafrost_Staff",
+   "class": "Посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Utility Wraps",
+   "ru": "Практичные обмотки",
+   "slug": "Utility_Wraps",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Trarthan Cannon",
+   "ru": "Тератновская пушка",
+   "slug": "Trarthan_Cannon",
+   "class": "Самострелы",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Intricate Crest Shield",
+   "ru": "Затейливый гербовый щит",
+   "slug": "Intricate_Crest_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ashbark Talisman",
+   "ru": "Талисман из пепельной коры",
+   "slug": "Ashbark_Talisman",
+   "class": "Талисманы",
+   "category": "jewellery"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Aged Cuffs",
+   "ru": "Старинные манжеты",
+   "slug": "Aged_Cuffs",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Cultist Crown",
+   "ru": "Корона культиста",
+   "slug": "Cultist_Crown",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Felled Greatclub",
+   "ru": "Дубина из пня",
+   "slug": "Felled_Greatclub",
+   "class": "Двуручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Firm Bracers",
+   "ru": "Плотные наручи",
+   "slug": "Firm_Bracers",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Hewn Mask",
+   "ru": "Обтёсанная маска",
+   "slug": "Hewn_Mask",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Iron Buckler",
+   "ru": "Железный баклер",
+   "slug": "Iron_Buckler",
+   "class": "Баклеры",
+   "category": "offhand"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Jingling Crest Shield",
+   "ru": "Звенящий гербовый щит",
+   "slug": "Jingling_Crest_Shield",
+   "class": "Щиты",
+   "category": "offhand"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Leather Buckler",
+   "ru": "Кожаный баклер",
+   "slug": "Leather_Buckler",
+   "class": "Баклеры",
+   "category": "offhand"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Leatherbound Hood",
+   "ru": "Кожаный капюшон",
+   "slug": "Leatherbound_Hood",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Makeshift Crossbow",
+   "ru": "Самодельный самострел",
+   "slug": "Makeshift_Crossbow",
+   "class": "Самострелы",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Plate Gauntlets",
+   "ru": "Латные перчатки",
+   "slug": "Plate_Gauntlets",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Quilted Vest",
+   "ru": "Стёганый жилет",
+   "slug": "Quilted_Vest",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ringmail Gauntlets",
+   "ru": "Кольчужные перчатки",
+   "slug": "Ringmail_Gauntlets",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Sectioned Bracers",
+   "ru": "Сегментные наручи",
+   "slug": "Sectioned_Bracers",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Shrouded Vest",
+   "ru": "Плотная кожанка",
+   "slug": "Shrouded_Vest",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Steelpoint Quarterstaff",
+   "ru": "Боевой посох со стальным наконечником",
+   "slug": "Steelpoint_Quarterstaff",
+   "class": "Боевые посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Warden Bow",
+   "ru": "Лук часового",
+   "slug": "Warden_Bow",
+   "class": "Луки",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Warpick",
+   "ru": "Клевец",
+   "slug": "Warpick",
+   "class": "Одноручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Wooden Buckler",
+   "ru": "Деревянный баклер",
+   "slug": "Wooden_Buckler",
+   "class": "Баклеры",
+   "category": "offhand"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Wooden Club",
+   "ru": "Деревянная дубинка",
+   "slug": "Wooden_Club",
+   "class": "Одноручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Zealot Bow",
+   "ru": "Лук подвижника",
+   "slug": "Zealot_Bow",
+   "class": "Луки",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Spined Bracers",
+   "ru": "Щетинистые наручи",
+   "slug": "Spined_Bracers",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Burnished Gauntlets",
+   "ru": "Полированные перчатки",
+   "slug": "Burnished_Gauntlets",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Rope Cuffs",
+   "ru": "Верёвочные манжеты",
+   "slug": "Rope_Cuffs",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ancestral Mail",
+   "ru": "Фамильный доспех",
+   "slug": "Ancestral_Mail",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Felt Cap",
+   "ru": "Войлочная шляпа",
+   "slug": "Felt_Cap",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Bolting Quarterstaff",
+   "ru": "Грозовой боевой посох",
+   "slug": "Bolting_Quarterstaff",
+   "class": "Боевые посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Drakeskin Boots",
+   "ru": "Сапоги из кожи рептилии",
+   "slug": "Drakeskin_Boots",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Falconer's Jacket",
+   "ru": "Накидка сокольничего",
+   "slug": "Falconers_Jacket",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Gemini Bow",
+   "ru": "Двойной лук",
+   "slug": "Gemini_Bow",
+   "class": "Луки",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Grinning Mask",
+   "ru": "Ухмыляющаяся маска",
+   "slug": "Grinning_Mask",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Maji Talisman",
+   "ru": "Талисман Маджи",
+   "slug": "Maji_Talisman",
+   "class": "Талисманы",
+   "category": "jewellery"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Polished Bracers",
+   "ru": "Полированные наручи",
+   "slug": "Polished_Bracers",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Rattling Sceptre",
+   "ru": "Гремящий скипетр",
+   "slug": "Rattling_Sceptre",
+   "class": "Скипетры",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Secured Wraps",
+   "ru": "Крепкие обмотки",
+   "slug": "Secured_Wraps",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Slipstrike Vest",
+   "ru": "Нагрудник ловкача",
+   "slug": "Slipstrike_Vest",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Quickslip Shoes",
+   "ru": "Ботинки быстрого шага",
+   "slug": "Quickslip_Shoes",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Charmed Shoes",
+   "ru": "Зачарованные ботинки",
+   "slug": "Charmed_Shoes",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Wanderer Shoes",
+   "ru": "Ботинки странника",
+   "slug": "Wanderer_Shoes",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Treerunner Shoes",
+   "ru": "Ботинки лесного гонца",
+   "slug": "Treerunner_Shoes",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Dragonscale Boots",
+   "ru": "Сапоги из кожи дракона",
+   "slug": "Dragonscale_Boots",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Cavalry Boots",
+   "ru": "Кавалерийские сапоги",
+   "slug": "Cavalry_Boots",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Abyss Tablet",
+   "ru": null,
+   "slug": null,
+   "class": null,
+   "category": null
+  },
+  {
+   "tier": "exceptional",
+   "en": "Diamond",
+   "ru": "Алмаз",
+   "slug": "Diamond",
+   "class": "Самоцветы",
+   "category": "jewel"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Emerald",
+   "ru": "Изумруд",
+   "slug": "Emerald",
+   "class": "Самоцветы",
+   "category": "jewel"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Gargantuan Mana Flask",
+   "ru": "Громадный флакон маны",
+   "slug": "Gargantuan_Mana_Flask",
+   "class": "Флаконы маны",
+   "category": "flask"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Garment",
+   "ru": "Одеяние",
+   "slug": "Garment",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Golden Charm",
+   "ru": "Золотой оберег",
+   "slug": "Golden_Charm",
+   "class": "Обереги",
+   "category": "charm"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Incense Relic",
+   "ru": "Курительница",
+   "slug": "Incense_Relic",
+   "class": "Реликвии",
+   "category": "relic"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Primed Quiver",
+   "ru": "Колчан боевых стрел",
+   "slug": "Primed_Quiver",
+   "class": "Колчаны",
+   "category": "offhand"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ring",
+   "ru": "Кольцо",
+   "slug": "Ring",
+   "class": "Кольца",
+   "category": "jewellery"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Ritual Tablet",
+   "ru": null,
+   "slug": null,
+   "class": null,
+   "category": null
+  },
+  {
+   "tier": "exceptional",
+   "en": "Sapphire",
+   "ru": "Сапфир",
+   "slug": "Sapphire",
+   "class": "Самоцветы",
+   "category": "jewel"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Silver Charm",
+   "ru": "Серебряный оберег",
+   "slug": "Silver_Charm",
+   "class": "Обереги",
+   "category": "charm"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Stone Charm",
+   "ru": "Каменный оберег",
+   "slug": "Stone_Charm",
+   "class": "Обереги",
+   "category": "charm"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Temple Tablet",
+   "ru": null,
+   "slug": null,
+   "class": null,
+   "category": null
+  },
+  {
+   "tier": "exceptional",
+   "en": "Thawing Charm",
+   "ru": "Тающий оберег",
+   "slug": "Thawing_Charm",
+   "class": "Обереги",
+   "category": "charm"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Timeless Jewel",
+   "ru": "Вневременной самоцвет",
+   "slug": "Timeless_Jewel",
+   "class": "Самоцветы",
+   "category": "jewel"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Time-Lost Diamond",
+   "ru": "Утерянный алмаз",
+   "slug": "Time-Lost_Diamond",
+   "class": "Самоцветы",
+   "category": "jewel"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Two-Stone Ring",
+   "ru": "Кольцо с двумя камнями",
+   "slug": "Two-Stone_Ring",
+   "class": "Кольца",
+   "category": "jewellery"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Unset Ring",
+   "ru": "Кольцо без камня",
+   "slug": "Unset_Ring",
+   "class": "Кольца",
+   "category": "jewellery"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Vase Relic",
+   "ru": "Ваза",
+   "slug": "Vase_Relic",
+   "class": "Реликвии",
+   "category": "relic"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Soaring Spear",
+   "ru": "Парящее копьё",
+   "slug": "Soaring_Spear",
+   "class": "Копья",
+   "category": "weapon"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Vaal Wraps",
+   "ru": "Обмотки ваал",
+   "slug": "Vaal_Wraps",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Elegant Wraps",
+   "ru": "Утончённые обмотки",
+   "slug": "Elegant_Wraps",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "War Wraps",
+   "ru": "Военные обмотки",
+   "slug": "War_Wraps",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Adorned Wraps",
+   "ru": "Украшенные обмотки",
+   "slug": "Adorned_Wraps",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Buckled Wraps",
+   "ru": "Обмотки с пряжками",
+   "slug": "Buckled_Wraps",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "exceptional",
+   "en": "Blacksteel Gauntlets",
+   "ru": "Перчатки из чёрной стали",
+   "slug": "Blacksteel_Gauntlets",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Fortress Sabatons",
+   "ru": "Сабатоны оплота",
+   "slug": "Fortress_Sabatons",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Fungal Talisman",
+   "ru": "Грибной талисман",
+   "slug": "Fungal_Talisman",
+   "class": "Талисманы",
+   "category": "jewellery"
+  },
+  {
+   "tier": "t2",
+   "en": "Noble Sabatons",
+   "ru": "Сабатоны дворянина",
+   "slug": "Noble_Sabatons",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Wrath Sceptre",
+   "ru": "Скипетр гнева",
+   "slug": "Wrath_Sceptre",
+   "class": "Скипетры",
+   "category": "weapon"
+  },
+  {
+   "tier": "t2",
+   "en": "Blacksteel Sabatons",
+   "ru": "Сабатоны из чёрной стали",
+   "slug": "Blacksteel_Sabatons",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Cryptic Crown",
+   "ru": "Скрытая корона",
+   "slug": "Cryptic_Crown",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Freebooter Cap",
+   "ru": "Шляпа флибустьера",
+   "slug": "Freebooter_Cap",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Omen Sceptre",
+   "ru": "Скипетр предвестия",
+   "slug": "Omen_Sceptre",
+   "class": "Скипетры",
+   "category": "weapon"
+  },
+  {
+   "tier": "t2",
+   "en": "Bastion Sabatons",
+   "ru": "Сабатоны бастиона",
+   "slug": "Bastion_Sabatons",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Seaglass Spear",
+   "ru": "Копьё из морского стекла",
+   "slug": "Seaglass_Spear",
+   "class": "Копья",
+   "category": "weapon"
+  },
+  {
+   "tier": "t2",
+   "en": "Serpentscale Boots",
+   "ru": "Сапоги из змеиной кожи",
+   "slug": "Serpentscale_Boots",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Veteran Sabatons",
+   "ru": "Сабатоны ветерана",
+   "slug": "Veteran_Sabatons",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Covered Sabatons",
+   "ru": "Сплошные сабатоны",
+   "slug": "Covered_Sabatons",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Flared Boots",
+   "ru": "Ботфорты",
+   "slug": "Flared_Boots",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Hunting Shoes",
+   "ru": "Охотничьи ботинки",
+   "slug": "Hunting_Shoes",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Lizardscale Boots",
+   "ru": "Сапоги из кожи ящера",
+   "slug": "Lizardscale_Boots",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Steelpoint Shoes",
+   "ru": "Ботинки со стальным носком",
+   "slug": "Steelpoint_Shoes",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Studded Boots",
+   "ru": "Клёпаные сапоги",
+   "slug": "Studded_Boots",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Weaver Leggings",
+   "ru": "Плетёные сапоги",
+   "slug": "Weaver_Leggings",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Rawhide Boots",
+   "ru": "Сыромятные сапоги",
+   "slug": "Rawhide_Boots",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Laced Boots",
+   "ru": "Сапоги с тесьмой",
+   "slug": "Laced_Boots",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Embossed Boots",
+   "ru": "Тиснёные сапоги",
+   "slug": "Embossed_Boots",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Steeltoe Boots",
+   "ru": "Сапоги со стальным носком",
+   "slug": "Steeltoe_Boots",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Mail Sabatons",
+   "ru": "Кольчужные сабатоны",
+   "slug": "Mail_Sabatons",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Braced Sabatons",
+   "ru": "Сабатоны с ремнями",
+   "slug": "Braced_Sabatons",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Stacked Sabatons",
+   "ru": "Пластинчатые сабатоны",
+   "slug": "Stacked_Sabatons",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Padded Leggings",
+   "ru": "Ватные сапоги",
+   "slug": "Padded_Leggings",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Secured Leggings",
+   "ru": "Меховые сапоги",
+   "slug": "Secured_Leggings",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Pelt Leggings",
+   "ru": "Сапоги из шкур",
+   "slug": "Pelt_Leggings",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Frayed Shoes",
+   "ru": "Потёртые ботинки",
+   "slug": "Frayed_Shoes",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t2",
+   "en": "Threaded Shoes",
+   "ru": "Прошитые ботинки",
+   "slug": "Threaded_Shoes",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Bound Cuffs",
+   "ru": "Обвязанные манжеты",
+   "slug": "Bound_Cuffs",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Faithful Leggings",
+   "ru": "Сапоги верного",
+   "slug": "Faithful_Leggings",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Ornate Cuffs",
+   "ru": "Изысканные манжеты",
+   "slug": "Ornate_Cuffs",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Shamanistic Leggings",
+   "ru": "Шаманские сапоги",
+   "slug": "Shamanistic_Leggings",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Spiked Bracers",
+   "ru": "Шипастые наручи",
+   "slug": "Spiked_Bracers",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Steelmail Gauntlets",
+   "ru": "Стальные кольчужные перчатки",
+   "slug": "Steelmail_Gauntlets",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Wildwood Talisman",
+   "ru": "Талисман Диколесья",
+   "slug": "Wildwood_Talisman",
+   "class": "Талисманы",
+   "category": "jewellery"
+  },
+  {
+   "tier": "t3",
+   "en": "Zealot Gauntlets",
+   "ru": "Перчатки подвижника",
+   "slug": "Zealot_Gauntlets",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Adherent Cuffs",
+   "ru": "Манжеты приверженца",
+   "slug": "Adherent_Cuffs",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Alpha Talisman",
+   "ru": "Талисман вожака",
+   "slug": "Alpha_Talisman",
+   "class": "Талисманы",
+   "category": "jewellery"
+  },
+  {
+   "tier": "t3",
+   "en": "Corsair Coat",
+   "ru": "Плащ корсара",
+   "slug": "Corsair_Coat",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Cryptic Leggings",
+   "ru": "Скрытые сапоги",
+   "slug": "Cryptic_Leggings",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Fanatic Greathammer",
+   "ru": "Молот фанатика",
+   "slug": "Fanatic_Greathammer",
+   "class": "Двуручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t3",
+   "en": "Galvanic Wand",
+   "ru": "Электризующий жезл",
+   "slug": "Galvanic_Wand",
+   "class": "Жезлы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t3",
+   "en": "Massive Greathammer",
+   "ru": "Массивный молот",
+   "slug": "Massive_Greathammer",
+   "class": "Двуручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t3",
+   "en": "Wolfskin Mantle",
+   "ru": "Покров из волчьих шкур",
+   "slug": "Wolfskin_Mantle",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Acrid Wand",
+   "ru": "Едкий жезл",
+   "slug": "Acrid_Wand",
+   "class": "Жезлы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t3",
+   "en": "Aegis Quarterstaff",
+   "ru": "Боевой посох эгиды",
+   "slug": "Aegis_Quarterstaff",
+   "class": "Боевые посохи",
+   "category": "weapon"
+  },
+  {
+   "tier": "t3",
+   "en": "Akoyan Club",
+   "ru": "Булава Акойи",
+   "slug": "Akoyan_Club",
+   "class": "Одноручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t3",
+   "en": "Ancient Cuffs",
+   "ru": "Древние манжеты",
+   "slug": "Ancient_Cuffs",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Apostle Leggings",
+   "ru": "Сапоги поборника",
+   "slug": "Apostle_Leggings",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Barbed Bracers",
+   "ru": "Колючие наручи",
+   "slug": "Barbed_Bracers",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Commander Gauntlets",
+   "ru": "Перчатки командира",
+   "slug": "Commander_Gauntlets",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Cultist Gauntlets",
+   "ru": "Перчатки культиста",
+   "slug": "Cultist_Gauntlets",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Fortified Hammer",
+   "ru": "Укреплённый молот",
+   "slug": "Fortified_Hammer",
+   "class": "Одноручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t3",
+   "en": "Gleaming Cuffs",
+   "ru": "Сверкающие манжеты",
+   "slug": "Gleaming_Cuffs",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Grand Bracers",
+   "ru": "Великолепные наручи",
+   "slug": "Grand_Bracers",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Ruination Maul",
+   "ru": "Разрушительный молот",
+   "slug": "Ruination_Maul",
+   "class": "Двуручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t3",
+   "en": "Stalking Bracers",
+   "ru": "Наручи погони",
+   "slug": "Stalking_Bracers",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Swiftstalker Coat",
+   "ru": "Куртка ловчего",
+   "slug": "Swiftstalker_Coat",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Tawhoan Greatclub",
+   "ru": "Дубина Тахоа",
+   "slug": "Tawhoan_Greatclub",
+   "class": "Двуручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t3",
+   "en": "Thunder Talisman",
+   "ru": "Талисман грома",
+   "slug": "Thunder_Talisman",
+   "class": "Талисманы",
+   "category": "jewellery"
+  },
+  {
+   "tier": "t3",
+   "en": "Trapper Hood",
+   "ru": "Капюшон ловчего",
+   "slug": "Trapper_Hood",
+   "class": "Шлемы",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Warlock Leggings",
+   "ru": "Сапоги ведуна",
+   "slug": "Warlock_Leggings",
+   "class": "Сапоги",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Wyrmscale Coat",
+   "ru": "Доспех из чешуи гивра",
+   "slug": "Wyrmscale_Coat",
+   "class": "Нательные доспехи",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Goldcast Cuffs",
+   "ru": "Золотые манжеты",
+   "slug": "Goldcast_Cuffs",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Refined Bracers",
+   "ru": "Обрамлённые наручи",
+   "slug": "Refined_Bracers",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Structured Hammer",
+   "ru": "Гранёный молот",
+   "slug": "Structured_Hammer",
+   "class": "Одноручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "t3",
+   "en": "Suede Bracers",
+   "ru": "Замшевые наручи",
+   "slug": "Suede_Bracers",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Bound Bracers",
+   "ru": "Обмотанные наручи",
+   "slug": "Bound_Bracers",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Layered Gauntlets",
+   "ru": "Пластинчатые перчатки",
+   "slug": "Layered_Gauntlets",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Doubled Gauntlets",
+   "ru": "Двухслойные перчатки",
+   "slug": "Doubled_Gauntlets",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Gauze Wraps",
+   "ru": "Обмотки из муслина",
+   "slug": "Gauze_Wraps",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Linen Wraps",
+   "ru": "Льняные обмотки",
+   "slug": "Linen_Wraps",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Kalguuran Cuffs",
+   "ru": "Калгууранские манжеты",
+   "slug": "Kalguuran_Cuffs",
+   "class": "Перчатки",
+   "category": "armour"
+  },
+  {
+   "tier": "t3",
+   "en": "Jade Club",
+   "ru": "Нефритовая дубинка",
+   "slug": "Jade_Club",
+   "class": "Одноручные булавы",
+   "category": "weapon"
+  },
+  {
+   "tier": "economy",
+   "en": "Dousing Charm",
+   "ru": "Охлаждающий оберег",
+   "slug": "Dousing_Charm",
+   "class": "Обереги",
+   "category": "charm"
+  },
+  {
+   "tier": "economy",
+   "en": "Staunching Charm",
+   "ru": "Рубцующий оберег",
+   "slug": "Staunching_Charm",
+   "class": "Обереги",
+   "category": "charm"
+  },
+  {
+   "tier": "economy",
+   "en": "Antidote Charm",
+   "ru": "Оберег противоядия",
+   "slug": "Antidote_Charm",
+   "class": "Обереги",
+   "category": "charm"
+  },
+  {
+   "tier": "economy",
+   "en": "Lapis Amulet",
+   "ru": "Амулет с лазуритом",
+   "slug": "Lapis_Amulet",
+   "class": "Амулеты",
+   "category": "jewellery"
+  },
+  {
+   "tier": "economy",
+   "en": "Plate Belt",
+   "ru": "Ремень из пластин",
+   "slug": "Plate_Belt",
+   "class": "Обереги",
+   "category": "charm"
+  },
+  {
+   "tier": "economy",
+   "en": "Stellar Amulet",
+   "ru": "Звёздный амулет",
+   "slug": "Stellar_Amulet",
+   "class": "Амулеты",
+   "category": "jewellery"
+  },
+  {
+   "tier": "economy",
+   "en": "Topaz Ring",
+   "ru": "Кольцо с топазом",
+   "slug": "Topaz_Ring",
+   "class": "Кольца",
+   "category": "jewellery"
+  },
+  {
+   "tier": "economy",
+   "en": "Ruby Charm",
+   "ru": "Оберег с рубином",
+   "slug": "Ruby_Charm",
+   "class": "Обереги",
+   "category": "charm"
+  }
+ ]
+}

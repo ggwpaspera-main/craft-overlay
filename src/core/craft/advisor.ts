@@ -1,4 +1,5 @@
 import type { ModifierGroup, ParsedItem } from '../types';
+import { filterBaseInfo } from '../filter/priors';
 
 /**
  * Крафт-советник (пробный режим).
@@ -74,6 +75,19 @@ export interface AdviceCounts {
   bad: number;
 }
 
+export type EsBodyVerdict = 'junk' | 'playable' | 'keep' | 'white' | 'unknown';
+
+export interface EsBodyAdvice {
+  es: number;
+  quality: number | null;
+  sockets: number;
+  runes: number;
+  baseTier: string | null;
+  baseTierLabel: string | null;
+  verdict: EsBodyVerdict;
+  checks: string[];
+}
+
 export interface CraftAdvice {
   supported: boolean;
   profile: string;
@@ -84,6 +98,7 @@ export interface CraftAdvice {
   mods: AdviceMod[];
   counts: AdviceCounts;
   warnings: string[];
+  esBody?: EsBodyAdvice;
 }
 
 interface AdviceProfile {
@@ -521,6 +536,67 @@ function makeSummary(baseLabel: string, itemLevel: number | undefined, action: s
   return `${baseLabel}${level}. ${action}`;
 }
 
+/** ES-тушка: пороги и проверка качества/рун. Работает только для body armour. */
+function buildEsBodyAdvice(item: ParsedItem): EsBodyAdvice | undefined {
+  if (item.category !== 'armour' || item.subtype !== 'bodyArmour') return undefined;
+  const es = numericProperty(item, 'energyShield');
+  if (es <= 0) return undefined;
+
+  const quality = item.quality ?? null;
+  const sockets = item.sockets.length;
+  const runes = item.runes.length;
+  const base = filterBaseInfo(item.baseType);
+  const checks: string[] = [];
+  let verdict: EsBodyVerdict = 'unknown';
+
+  if (item.rarity === 'normal') {
+    verdict = 'white';
+    checks.push(`ES ${es} на белой базе — это ещё не итог, сначала 2 мода.`);
+  } else if (es < 800) {
+    verdict = 'junk';
+    checks.push(`ES ${es} < 800 — неликвид, не вкладывать валюту.`);
+  } else if (es < 900) {
+    verdict = 'playable';
+    checks.push(`ES ${es} — диапазон 800–900, пойдёт для докрафта.`);
+  } else {
+    verdict = 'keep';
+    checks.push(`ES ${es} ≥ 900 — сильный результат, не рероллить.`);
+  }
+
+  if (quality === null) {
+    checks.push('Качество не видно в тексте — проверь заточку в игре.');
+  } else if (quality < 20) {
+    checks.push(`Качество ${quality}% < 20% — теряешь ES/защиту, сначала заточи.`);
+  } else {
+    checks.push(`Качество ${quality}% — нормально.`);
+  }
+
+  if (sockets === 0) {
+    checks.push('Нет сокетов под руны — проверь, можно ли добавить.');
+  } else if (runes < sockets) {
+    checks.push(`Сокеты: ${sockets}, рун: ${runes} — есть пустые сокеты.`);
+  } else {
+    checks.push(`Сокеты: ${sockets}, рун: ${runes}.`);
+  }
+
+  if (base) {
+    checks.push(`База: ${base.tierLabel} (${base.entry.en}).`);
+  } else {
+    checks.push('Базы нет в NeverSink T1–T3 — низкий приоритет.');
+  }
+
+  return {
+    es,
+    quality,
+    sockets,
+    runes,
+    baseTier: base?.tier ?? null,
+    baseTierLabel: base?.tierLabel ?? null,
+    verdict,
+    checks,
+  };
+}
+
 export function analyzeCraft(item: ParsedItem): CraftAdvice {
   if (item.rarity !== 'normal' && item.rarity !== 'magic' && item.rarity !== 'rare') {
     return unsupported(
@@ -581,6 +657,7 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
 
   const baseLabel = item.name ?? item.baseType ?? item.itemClass;
   const levelText = item.itemLevel !== undefined ? `, ilvl ${item.itemLevel}` : '';
+  const esBody = buildEsBodyAdvice(item);
 
   let summary = '';
   let steps: string[] = [];
@@ -693,6 +770,24 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
 
   steps.push('Оценка без цен: ориентир — целевые моды, тиры и открытые слоты.');
 
+  if (esBody) {
+    if (esBody.verdict === 'junk') {
+      summary = `ES ${esBody.es}: неликвид. ${summary}`;
+      steps = [
+        `ES ${esBody.es} < 800 — не вкладывать валюту в этот экземпляр.`,
+        'Выкинуть/продать; если база сильная — искать новый base.',
+      ];
+    } else if (esBody.verdict === 'playable') {
+      summary = `ES ${esBody.es} (800–900): пойдёт. ${summary}`;
+      steps.unshift('ES в диапазоне 800–900 — можно докрафтить, если база и открытые слоты устраивают.');
+    } else if (esBody.verdict === 'keep') {
+      summary = `ES ${esBody.es} (≥900): не трогать. ${summary}`;
+      steps.unshift('ES ≥ 900 — сильный экземпляр; не рероллить, только аккуратный докрафт при необходимости.');
+    } else if (esBody.verdict === 'white') {
+      summary = `Белая база, ES ${esBody.es}. ${summary}`;
+    }
+  }
+
   return {
     supported: true,
     profile: `${profile.label} (пробный режим)`,
@@ -703,5 +798,6 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
     mods,
     counts,
     warnings,
+    ...(esBody ? { esBody } : {}),
   };
 }

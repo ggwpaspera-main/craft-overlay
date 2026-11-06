@@ -302,6 +302,18 @@ function renderAdvice(advice: CraftAdvice): string {
     </div>
   `;
 
+  const esBlock = advice.esBody
+    ? `<div class="advice-es advice-es-${escapeHtml(advice.esBody.verdict)}">
+        <div class="advice-es-head">
+          <span>ES: <b>${advice.esBody.es}</b></span>
+          <span>${advice.esBody.baseTierLabel ? `база: ${escapeHtml(advice.esBody.baseTierLabel)}` : 'база вне тиров'}</span>
+          <span>${advice.esBody.quality === null ? 'качество: ?' : `качество: ${advice.esBody.quality}%`}</span>
+          <span>руны: ${advice.esBody.runes}/${advice.esBody.sockets}</span>
+        </div>
+        <ul>${advice.esBody.checks.map((check) => `<li>${escapeHtml(check)}</li>`).join('')}</ul>
+      </div>`
+    : '';
+
   const steps = advice.steps.length
     ? `<ol class="advice-steps">${advice.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join('')}</ol>`
     : '';
@@ -342,6 +354,7 @@ function renderAdvice(advice: CraftAdvice): string {
     <section class="block advice">
       <h3>Совет по крафту ${profile}</h3>
       <p class="advice-summary">${escapeHtml(advice.summary)}</p>
+      ${esBlock}
       ${counts}
       ${steps}
       ${mods}
