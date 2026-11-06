@@ -261,7 +261,7 @@ describe('ES-тушка: пороги ES, качество и руны', () => {
       makeItem({ ...base, rarity: 'rare', properties: [esProperty('850')] }),
     );
     expect(advice.esBody?.verdict).toBe('playable');
-    expect(advice.summary).toContain('800–900');
+    expect(advice.summary).toContain('пойдёт');
   });
 
   it('ES ≥ 900 — не трогать', () => {
@@ -290,15 +290,24 @@ describe('ES-тушка: пороги ES, качество и руны', () => {
     expect(advice.mods[0]?.verdict).toBe('bad');
   });
 
-  it('ES: дух T3 — хороший', () => {
-    const advice = analyzeCraft(
+  it('ES: дух T1–T2 — хороший, T3 — средний', () => {
+    const good = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        modifiers: [group('prefix', '+40 к духу', 2)],
+      }),
+    );
+    expect(good.mods[0]?.verdict).toBe('good');
+
+    const medium = analyzeCraft(
       makeItem({
         ...base,
         rarity: 'rare',
         modifiers: [group('prefix', '+40 к духу', 3)],
       }),
     );
-    expect(advice.mods[0]?.verdict).toBe('good');
+    expect(medium.mods[0]?.verdict).toBe('neutral');
   });
 
   it('ES: гибрид %ES + жизнь T2 — средний', () => {
@@ -316,6 +325,42 @@ describe('ES-тушка: пороги ES, качество и руны', () => {
       }),
     );
     expect(advice.mods[0]?.verdict).toBe('neutral');
+  });
+
+  it('ES: flat + гибрид → не хватает чистого %ES', () => {
+    const advice = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        modifiers: [
+          group('prefix', '+85 к максимуму энергетического щита', 2),
+          multiGroup(
+            'prefix',
+            ['30% увеличение энергетического щита', '+20 к максимуму энергетического щита'],
+            1,
+          ),
+        ],
+      }),
+    );
+    expect(advice.steps.join(' ')).toContain('%ES');
+  });
+
+  it('ES: дух понижает целевой порог до 650', () => {
+    const advice = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        properties: [esProperty('700')],
+        modifiers: [
+          group('prefix', '+40 к духу', 2),
+          group('prefix', '+85 к максимуму энергетического щита', 2),
+          group('prefix', '90% увеличение энергетического щита', 2),
+        ],
+      }),
+    );
+    expect(advice.esBody?.planLabel).toContain('дух');
+    expect(advice.esBody?.targetEs).toBe(650);
+    expect(advice.esBody?.verdict).toBe('playable');
   });
 
   it('ES: шипы — мусор', () => {

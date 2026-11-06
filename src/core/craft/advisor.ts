@@ -64,7 +64,10 @@ export interface AdviceMod {
   verdict: AdviceVerdict;
   reason: string;
   families: ModFamily[];
+  esChannel?: EsChannel;
 }
+
+export type EsChannel = 'flat' | 'percent' | 'hybrid' | 'hybridLife' | 'spirit';
 
 export interface AdviceCounts {
   prefixes: number;
@@ -94,6 +97,8 @@ export interface EsBodyAdvice {
   runes: number;
   baseTier: string | null;
   baseTierLabel: string | null;
+  planLabel: string;
+  targetEs: number;
   verdict: EsBodyVerdict;
   checks: string[];
 }
@@ -201,6 +206,64 @@ function familyOf(text: string): ModFamily {
 /** Гибридный мод может давать два целевых семейства сразу. */
 function familiesOfGroup(group: ModifierGroup): ModFamily[] {
   return [...new Set(group.lines.map((line) => familyOf(line.text)).filter((family) => family !== 'unknown'))];
+}
+
+/** Три отдельных ES-канала + гибрид с жизнью и дух. */
+function esChannelOf(families: ModFamily[]): EsChannel | undefined {
+  const hasFlat = families.includes('defenceFlat');
+  const hasPercent = families.includes('defencePercent');
+  const hasLife = families.includes('life');
+  if (hasLife) return hasFlat || hasPercent ? 'hybridLife' : undefined;
+  if (hasFlat && hasPercent) return 'hybrid';
+  if (hasFlat) return 'flat';
+  if (hasPercent) return 'percent';
+  if (families.includes('spirit')) return 'spirit';
+  return undefined;
+}
+
+function esTierVerdict(channel: EsChannel, tier: number | undefined): AdviceVerdict {
+  if (tier === undefined) return 'neutral';
+  if (channel === 'hybridLife') return tier <= 2 ? 'neutral' : 'bad';
+  if (channel === 'spirit') {
+    if (tier <= 2) return 'good';
+    if (tier === 3) return 'neutral';
+    return 'bad';
+  }
+  if (tier <= 3) return 'good';
+  if (tier === 4) return 'neutral';
+  return 'bad';
+}
+
+const ES_CHANNEL_LABEL: Record<EsChannel, string> = {
+  flat: 'flat ES',
+  percent: '%ES',
+  hybrid: 'гибрид flat+%ES',
+  hybridLife: 'гибрид ES+жизнь',
+  spirit: 'дух',
+};
+
+interface EsPrefixPlan {
+  label: string;
+  targets: EsChannel[];
+  threshold: number;
+}
+
+function esPrefixPlan(channels: EsChannel[]): EsPrefixPlan {
+  if (channels.includes('spirit')) {
+    return { label: 'дух + flat ES + %ES', targets: ['flat', 'percent'], threshold: 650 };
+  }
+  if (channels.includes('hybridLife')) {
+    return {
+      label: 'гибрид ES+жизнь + flat ES + %ES',
+      targets: ['flat', 'percent'],
+      threshold: 800,
+    };
+  }
+  return {
+    label: 'flat ES + %ES + гибрид flat+%ES',
+    targets: ['flat', 'percent', 'hybrid'],
+    threshold: 800,
+  };
 }
 
 const TIER_GOOD_MAX = 3;
@@ -581,6 +644,7 @@ function classify(
   families: ModFamily[],
   tier: number | undefined,
   esItem: boolean,
+  esHasSpirit = false,
 ): { verdict: AdviceVerdict; reason: string } {
   const family = familyOf(text);
   const allFamilies = families.length > 0 ? families : family === 'unknown' ? [] : [family];
@@ -595,27 +659,22 @@ function classify(
     if (allFamilies.includes('thorns')) {
       return { verdict: 'bad', reason: 'шипы — мусор для ЭЩ-тушки' };
     }
-    const esFamilies = allFamilies.filter(
-      (candidate) => candidate === 'defencePercent' || candidate === 'defenceFlat',
-    );
-    const hasLife = allFamilies.includes('life');
-    if (hasLife) {
-      if (esFamilies.length > 0 && tier !== undefined && tier <= 2) {
-        return { verdict: 'neutral', reason: 'гибрид ЭЩ + жизнь T1–T2 — средний' };
+    const channel = esChannelOf(allFamilies);
+    if (!channel && allFamilies.includes('life')) {
+      return { verdict: 'bad', reason: 'чистая жизнь — мусор для ЭЩ-тушки' };
+    }
+    if (channel) {
+      if (channel === 'hybrid' && esHasSpirit) {
+        return {
+          verdict: 'neutral',
+          reason: 'при выборе духа гибрид flat+%ES не является целью',
+        };
       }
-      return { verdict: 'bad', reason: 'любой тир жизни/гибрида с жизнью — мусор' };
-    }
-    if (esFamilies.length > 0) {
-      const verdict = tierVerdict(tier);
-      if (verdict === 'good') return { verdict, reason: `ES-мод, тир ${tier} — хороший` };
-      if (verdict === 'bad') return { verdict, reason: `ES-мод, тир ${tier} — слабый` };
-      return { verdict, reason: 'ES-мод, тир средний/неизвестен' };
-    }
-    if (allFamilies.includes('spirit')) {
-      const verdict = tierVerdict(tier);
-      if (verdict === 'good') return { verdict, reason: `дух, тир ${tier} — хороший` };
-      if (verdict === 'bad') return { verdict, reason: `дух, тир ${tier} — слабый` };
-      return { verdict, reason: 'дух, тир средний/неизвестен' };
+      const verdict = esTierVerdict(channel, tier);
+      const label = ES_CHANNEL_LABEL[channel];
+      if (verdict === 'good') return { verdict, reason: `${label}, тир ${tier} — хороший` };
+      if (verdict === 'neutral') return { verdict, reason: `${label}, тир ${tier} — средний` };
+      return { verdict, reason: `${label}, тир ${tier} — плохой` };
     }
   }
 
@@ -657,6 +716,14 @@ function buildEsBodyAdvice(item: ParsedItem): EsBodyAdvice | undefined {
   const sockets = item.sockets.length;
   const runes = item.runes.length;
   const base = resolveFilterBase(item.baseType, item.name);
+  const prefixChannels = item.modifiers
+    .filter(
+      (modifier) =>
+        modifier.source === 'explicit' && modifier.kind === 'prefix',
+    )
+    .map((group) => esChannelOf(familiesOfGroup(group)))
+    .filter((channel): channel is EsChannel => channel !== undefined);
+  const plan = esPrefixPlan(prefixChannels);
   const checks: string[] = [];
   let verdict: EsBodyVerdict = 'unknown';
 
@@ -681,16 +748,30 @@ function buildEsBodyAdvice(item: ParsedItem): EsBodyAdvice | undefined {
     }
   } else if (item.rarity === 'magic') {
     verdict = 'magic';
-    checks.push(`ES ${es} — текущий ES magic-предмета; порог 800 к magic не применяем.`);
-  } else if (es < 800) {
+    checks.push(`ES ${es} — текущий ES magic-предмета; порог ${plan.threshold} к magic не применяем.`);
+  } else if (es < plan.threshold) {
     verdict = 'junk';
-    checks.push(`ES ${es} < 800 — неликвид, не вкладывать валюту.`);
-  } else if (es < 900) {
+    checks.push(
+      `ES ${es} < ${plan.threshold} для плана «${plan.label}» — неликвид, не вкладывать валюту.`,
+    );
+  } else if (es < plan.threshold + 100) {
     verdict = 'playable';
-    checks.push(`ES ${es} — диапазон 800–900, пойдёт для докрафта.`);
+    checks.push(`ES ${es} — план «${plan.label}» закрывает порог ${plan.threshold}; пойдёт для докрафта.`);
   } else {
     verdict = 'keep';
-    checks.push(`ES ${es} ≥ 900 — сильный результат, не рероллить.`);
+    checks.push(`ES ${es} ≥ ${plan.threshold + 100} — сильный результат, не рероллить.`);
+  }
+
+  if (item.rarity === 'rare' && prefixChannels.includes('hybridLife')) {
+    const flat = item.modifiers.find(
+      (group) => group.kind === 'prefix' && esChannelOf(familiesOfGroup(group)) === 'flat',
+    );
+    const percent = item.modifiers.find(
+      (group) => group.kind === 'prefix' && esChannelOf(familiesOfGroup(group)) === 'percent',
+    );
+    if (!flat || !percent || (flat.tier ?? 99) > 2 || (percent.tier ?? 99) > 2) {
+      checks.push('С гибридом ES+жизнь для 800+ нужны отдельные flat ES и %ES не ниже T2.');
+    }
   }
 
   if (quality === null) {
@@ -722,6 +803,8 @@ function buildEsBodyAdvice(item: ParsedItem): EsBodyAdvice | undefined {
     runes,
     baseTier: base?.tier ?? null,
     baseTierLabel: base?.tierLabel ?? null,
+    planLabel: plan.label,
+    targetEs: plan.threshold,
     verdict,
     checks,
   };
@@ -747,12 +830,19 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
       (modifier.kind === 'prefix' || modifier.kind === 'suffix'),
   );
   const esItem = item.category === 'armour' && numericProperty(item, 'energyShield') > 0;
+  const esHasSpirit =
+    esItem &&
+    groups.some(
+      (group) =>
+        group.kind === 'prefix' && esChannelOf(familiesOfGroup(group)) === 'spirit',
+    );
 
   const mods: AdviceMod[] = groups.map((group) => {
     const kind = group.kind === 'prefix' ? 'prefix' : 'suffix';
     const text = groupText(group);
     const families = familiesOfGroup(group);
-    const result = classify(kind, text, profile, families, group.tier, esItem);
+    const result = classify(kind, text, profile, families, group.tier, esItem, esHasSpirit);
+    const esChannel = esItem ? esChannelOf(families) : undefined;
     return {
       kind,
       text,
@@ -760,6 +850,7 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
       verdict: result.verdict,
       reason: result.reason,
       families,
+      ...(esChannel ? { esChannel } : {}),
     };
   });
 
@@ -786,6 +877,13 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
   const presentSuffixFamilies = new Set(
     mods.filter((mod) => mod.kind === 'suffix').flatMap((mod) => mod.families),
   );
+  const esPrefixChannels = mods
+    .filter((mod) => mod.kind === 'prefix' && mod.esChannel)
+    .map((mod) => mod.esChannel as EsChannel);
+  const esPlan = esItem ? esPrefixPlan(esPrefixChannels) : null;
+  const missingEsChannels = esPlan
+    ? esPlan.targets.filter((channel) => !esPrefixChannels.includes(channel))
+    : [];
   const missingPrefixes = profile.targetPrefixFamilies.filter(
     (family) => !presentPrefixFamilies.has(family),
   );
@@ -924,7 +1022,9 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
         'Если база T1/T2 — искать новый экземпляр.',
       ];
     } else {
-      const prefixNeed = missingPrefixes.map(familyLabel);
+      const prefixNeed = esPlan
+        ? missingEsChannels.map((channel) => ES_CHANNEL_LABEL[channel])
+        : missingPrefixes.map(familyLabel);
       const suffixNeed = missingSuffixes.map(familyLabel);
       if (openPrefixes > 0 && prefixNeed.length > 0) {
         steps.unshift(
@@ -945,19 +1045,23 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
 
   if (esBody && !(item.rarity === 'rare' && counts.bad >= 2)) {
     if (esBody.verdict === 'junk') {
-      summary = `ES ${esBody.es}: неликвид. ${summary}`;
+      summary = `ES ${esBody.es}: неликвид для плана «${esBody.planLabel}». ${summary}`;
       steps = [
-        `ES ${esBody.es} < 800 — не вкладывать валюту в этот экземпляр.`,
+        `ES ${esBody.es} < ${esBody.targetEs} для плана «${esBody.planLabel}» — не вкладывать валюту.`,
         'Выкинуть/продать; если база сильная — искать новый base.',
       ];
     } else if (esBody.verdict === 'playable') {
-      summary = `ES ${esBody.es} (800–900): пойдёт. ${summary}`;
-      steps.unshift('ES в диапазоне 800–900 — можно докрафтить, если база и открытые слоты устраивают.');
+      summary = `ES ${esBody.es}: пойдёт для плана «${esBody.planLabel}». ${summary}`;
+      steps.unshift(
+        `ES ${esBody.es} в диапазоне ${esBody.targetEs}–${esBody.targetEs + 99} — можно докрафтить.`,
+      );
     } else if (esBody.verdict === 'keep') {
-      summary = `ES ${esBody.es} (≥900): не трогать. ${summary}`;
-      steps.unshift('ES ≥ 900 — сильный экземпляр; не рероллить, только аккуратный докрафт при необходимости.');
+      summary = `ES ${esBody.es}: не трогать (план «${esBody.planLabel}»). ${summary}`;
+      steps.unshift(
+        `ES ≥ ${esBody.targetEs + 100} — сильный экземпляр; не рероллить, только аккуратный докрафт.`,
+      );
     } else if (esBody.verdict === 'magic') {
-      summary = `ES ${esBody.es} (текущий magic; порог 800 не применяется). ${summary}`;
+      summary = `ES ${esBody.es} (текущий magic; порог ${esBody.targetEs} не применяется). ${summary}`;
     } else if (esBody.verdict === 'base-bad') {
       summary = `База T1, ilvl ${item.itemLevel ?? '?'} — плохо. ${summary}`;
       steps = [

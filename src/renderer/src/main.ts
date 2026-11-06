@@ -310,6 +310,7 @@ function renderAdvice(advice: CraftAdvice): string {
           <span>${advice.esBody.quality === null ? 'качество: ?' : `качество: ${advice.esBody.quality}%`}</span>
           <span>руны: ${advice.esBody.runes}/${advice.esBody.sockets}</span>
         </div>
+        <div class="advice-es-plan">план: ${escapeHtml(advice.esBody.planLabel)} · цель ES ≥ ${advice.esBody.targetEs}</div>
         <ul>${advice.esBody.checks.map((check) => `<li>${escapeHtml(check)}</li>`).join('')}</ul>
       </div>`
     : '';

@@ -391,6 +391,12 @@ textarea {
   color: #f0e4bd;
 }
 
+.advice-es-plan {
+  margin-top: 4px;
+  color: #d8c58f;
+  font-size: 10.5px;
+}
+
 .advice-es ul {
   margin: 6px 0 0;
   padding-left: 16px;

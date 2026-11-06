@@ -327,6 +327,12 @@ body {
   color: #f0e4bd;
 }
 
+.ov-advice-es-plan {
+  margin-top: 3px;
+  color: #d8c58f;
+  font-size: 9.5px;
+}
+
 .ov-advice-es ul {
   margin: 4px 0 0;
   padding-left: 14px;
