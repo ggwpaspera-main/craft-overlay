@@ -4,7 +4,7 @@
 
 Репозиторий: **https://github.com/ggwpaspera-main/craft-overlay** (public).
 
-> Статус: **M6 — крафт-советник для экипировки + stage-aware ES-профиль + верхняя панель оверлея**. Парсер v0.2.0, данные: 1881 база, 145 валют, снимок NeverSink 0.10.4. 48 тестов. Без trade API и цен.
+> Статус: **M6 — крафт-советник для экипировки + stage-aware ES-профиль + верхняя панель оверлея**. Парсер v0.2.0, данные: 1881 база, 145 валют, снимок NeverSink 0.10.4. 49 тестов. Без trade API и цен.
 
 ## Зачем парсер первым
 
@@ -25,6 +25,7 @@ data/bases.json       базовые типы предметов (poe2db)
 data/currency.json    валюта и её эффекты
 data/filter/          снимок NeverSink 0.10.4 (MIT)
 data/filter-base-tiers.json  компактный индекс баз для советника
+data/craft/es-affixes.json   точные тиры/диапазоны ES из poe2db
 scripts/              сборка out/ через esbuild
 src/core/             парсер + крафт-советник (чистый TS)
 src/core/filter/      приоры баз из NeverSink-фильтра
@@ -147,6 +148,7 @@ M6 — не цены, а **совет, что делать с предметом
 - [`data/bases.json`](data/bases.json) — **1881 базовый тип** в **36 классах** (оружие, доспехи, бижутерия, флаконы, обереги, самоцветы, waystone, реликвии). Источник: poe2db.ru, снимок 2026-11-05. Свойства, требования, имплиситы, иконки.
 - [`data/currency.json`](data/currency.json) — **145 валют**, из них **11 основных сфер** с описанием эффекта. Источник: соседний проект `poe2-craft-guide/orbs.html`.
 - [`data/filter/neversink-0.10.4-3strict.txt`](data/filter/neversink-0.10.4-3strict.txt) — снимок NeverSink-фильтра (MIT), используется как prior для баз; сгенерированные `data/filter-priors.json` и `data/filter-base-tiers.json` пересобираются через `npm.cmd run filter:priors`.
+- [`data/craft/es-affixes.json`](data/craft/es-affixes.json) — точные тиры, уровни, имена и диапазоны flat ES / %ES / гибридов с poe2db.
 
 Схемы, ограничения и лицензия — в [docs/DATA.md](docs/DATA.md).
 

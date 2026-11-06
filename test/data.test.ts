@@ -92,4 +92,24 @@ describe('data snapshots', () => {
     expect(chaos?.en).toBe('Chaos Orb');
     expect(chaos?.effect).toContain('мод');
   });
+
+  it('es-affixes.json содержит точные диапазоны ES-тиров', () => {
+    const data = readJson<{
+      families: Record<
+        string,
+        { tiers: Array<{ tier: number; name: string; min?: number; max?: number }> }
+      >;
+    }>('../data/craft/es-affixes.json');
+
+    expect(data.families.flatEs?.tiers).toHaveLength(11);
+    expect(data.families.percentEs?.tiers).toHaveLength(8);
+    expect(data.families.hybridEs?.tiers).toHaveLength(6);
+    expect(data.families.hybridEsLife?.tiers).toHaveLength(6);
+
+    const flatT2 = data.families.flatEs?.tiers.find((entry) => entry.tier === 2);
+    expect(flatT2).toMatchObject({ name: 'Ослепительный', min: 81, max: 90 });
+
+    const percentT1 = data.families.percentEs?.tiers.find((entry) => entry.tier === 1);
+    expect(percentT1).toMatchObject({ name: 'Непоколебимый', min: 101, max: 110 });
+  });
 });

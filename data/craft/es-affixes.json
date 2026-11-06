@@ -1,0 +1,56 @@
+{
+  "source": "poe2db Body_Armours_int, снимок 2026-11-06",
+  "families": {
+    "flatEs": {
+      "mod": "BaseLocalDefences",
+      "tiers": [
+        { "tier": 11, "name": "Сияющий", "level": 1, "min": 10, "max": 17 },
+        { "tier": 10, "name": "Мерцающий", "level": 8, "min": 18, "max": 24 },
+        { "tier": 9, "name": "Переливающийся", "level": 16, "min": 25, "max": 30 },
+        { "tier": 8, "name": "Яркий", "level": 25, "min": 31, "max": 35 },
+        { "tier": 7, "name": "Светящийся", "level": 33, "min": 36, "max": 41 },
+        { "tier": 6, "name": "Пульсирующий", "level": 46, "min": 42, "max": 47 },
+        { "tier": 5, "name": "Сверкающий", "level": 54, "min": 48, "max": 60 },
+        { "tier": 4, "name": "Искрящийся", "level": 60, "min": 61, "max": 73 },
+        { "tier": 3, "name": "Лучистый", "level": 65, "min": 74, "max": 80 },
+        { "tier": 2, "name": "Ослепительный", "level": 70, "min": 81, "max": 90 },
+        { "tier": 1, "name": "Лучезарный", "level": 79, "min": 91, "max": 96 }
+      ]
+    },
+    "percentEs": {
+      "mod": "DefencesPercent",
+      "tiers": [
+        { "tier": 8, "name": "Защитный", "level": 2, "min": 15, "max": 26 },
+        { "tier": 7, "name": "Волевой", "level": 16, "min": 27, "max": 42 },
+        { "tier": 6, "name": "Решительный", "level": 33, "min": 43, "max": 55 },
+        { "tier": 5, "name": "Бесстрашный", "level": 46, "min": 56, "max": 67 },
+        { "tier": 4, "name": "Неустрашимый", "level": 54, "min": 68, "max": 79 },
+        { "tier": 3, "name": "Неукротимый", "level": 60, "min": 80, "max": 91 },
+        { "tier": 2, "name": "Неприступный", "level": 65, "min": 92, "max": 100 },
+        { "tier": 1, "name": "Непоколебимый", "level": 75, "min": 101, "max": 110 }
+      ]
+    },
+    "hybridEs": {
+      "mod": "BaseLocalDefencesAndDefencePercent",
+      "tiers": [
+        { "tier": 6, "name": "Дьяконский", "level": 8, "flatMin": 4, "flatMax": 7, "percentMin": 6, "percentMax": 13 },
+        { "tier": 5, "name": "Кардинальский", "level": 16, "flatMin": 8, "flatMax": 13, "percentMin": 14, "percentMax": 20 },
+        { "tier": 4, "name": "Жреческий", "level": 33, "flatMin": 14, "flatMax": 16, "percentMin": 21, "percentMax": 26 },
+        { "tier": 3, "name": "Сановный", "level": 46, "flatMin": 17, "flatMax": 20, "percentMin": 27, "percentMax": 32 },
+        { "tier": 2, "name": "Первосвященный", "level": 60, "flatMin": 21, "flatMax": 25, "percentMin": 33, "percentMax": 38 },
+        { "tier": 1, "name": "Божественный", "level": 78, "flatMin": 26, "flatMax": 30, "percentMin": 39, "percentMax": 42 }
+      ]
+    },
+    "hybridEsLife": {
+      "mod": "BaseLocalDefencesAndLife",
+      "tiers": [
+        { "tier": 6, "name": "Монаший", "level": 8, "percentMin": 6, "percentMax": 13, "lifeMin": 7, "lifeMax": 10 },
+        { "tier": 5, "name": "Игуменский", "level": 16, "percentMin": 14, "percentMax": 20, "lifeMin": 11, "lifeMax": 19 },
+        { "tier": 4, "name": "Аббатский", "level": 33, "percentMin": 21, "percentMax": 26, "lifeMin": 20, "lifeMax": 25 },
+        { "tier": 3, "name": "Епископский", "level": 46, "percentMin": 27, "percentMax": 32, "lifeMin": 26, "lifeMax": 32 },
+        { "tier": 2, "name": "Экзархный", "level": 60, "percentMin": 33, "percentMax": 38, "lifeMin": 33, "lifeMax": 41 },
+        { "tier": 1, "name": "Папский", "level": 78, "percentMin": 39, "percentMax": 42, "lifeMin": 42, "lifeMax": 49 }
+      ]
+    }
+  }
+}
