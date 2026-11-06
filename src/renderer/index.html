@@ -20,6 +20,7 @@
           </div>
         </div>
         <div class="actions">
+          <button id="settings-open" class="btn" type="button">Настройки</button>
           <button id="paste" class="btn primary" type="button">Вставить из буфера</button>
           <button id="clear" class="btn" type="button">Очистить</button>
         </div>
@@ -29,7 +30,7 @@
         <section class="pane input-pane">
           <div class="pane-head">
             <h2>Текст предмета</h2>
-            <span class="hint">Alt+F — скопировать предмет · Alt+Shift+F — скрыть/показать оверлей</span>
+            <span class="hint">Alt+F — скопировать предмет · Alt+G — проверить докрафт · Alt+Shift+F — скрыть/показать оверлей</span>
           </div>
           <textarea
             id="item-text"
@@ -51,9 +52,59 @@
       </main>
 
       <footer class="footer">
-        <span>Локальный разбор · данные не отправляются в сеть</span>
+        <span>Предметы не отправляются в сеть · курсы валют: poe.ninja</span>
         <span>v0.2.0</span>
       </footer>
+    </div>
+    <div id="settings" class="settings" hidden>
+      <div class="settings-panel" role="dialog" aria-label="Настройки">
+        <div class="pane-head">
+          <h2>Настройки</h2>
+          <button id="settings-close" class="btn small" type="button">Закрыть</button>
+        </div>
+
+        <section class="settings-section">
+          <h3>Целевые предметы</h3>
+          <p class="hint">
+            Вставь русский текст редкого предмета из игры или с маркета. Alt+G на предмете той же
+            базы покажет, можно ли докрафтить его до образца.
+          </p>
+          <textarea id="target-text" spellcheck="false" placeholder="Текст предмета…"></textarea>
+          <div class="settings-row">
+            <button id="target-add" class="btn primary" type="button">Добавить образец</button>
+            <span id="target-error" class="settings-error" role="alert"></span>
+          </div>
+          <ul id="target-list" class="target-list"></ul>
+        </section>
+
+        <section class="settings-section">
+          <h3>Расчёт</h3>
+          <div class="settings-row">
+            <label for="tolerance">Разброс значений, ±%</label>
+            <input id="tolerance" type="number" min="0" max="100" step="1" />
+            <label for="league">Лига</label>
+            <input id="league" type="text" />
+          </div>
+          <p class="hint">
+            Значение мода засчитывается, если оно не ниже образца минус разброс. Значение выше
+            образца всегда подходит.
+          </p>
+        </section>
+
+        <section class="settings-section">
+          <h3>Цены, в Exalted Orb</h3>
+          <div class="settings-row">
+            <button id="prices-refresh" class="btn" type="button">Обновить с poe.ninja</button>
+            <span id="prices-status" class="hint"></span>
+          </div>
+          <table class="price-table">
+            <thead>
+              <tr><th>Валюта</th><th>poe.ninja</th><th>Вручную</th></tr>
+            </thead>
+            <tbody id="price-rows"></tbody>
+          </table>
+        </section>
+      </div>
     </div>
     <script src="./renderer.js"></script>
   </body>

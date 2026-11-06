@@ -24,6 +24,16 @@ await build({
   external: ['electron'],
 });
 
+// Поток расчёта докрафта.
+await build({
+  ...common,
+  entryPoints: ['src/main/target-worker.ts'],
+  outfile: `${outDir}/target-worker.cjs`,
+  platform: 'node',
+  format: 'cjs',
+  target: 'node20',
+});
+
 // Preload — CommonJS, contextBridge + ipcRenderer.
 await build({
   ...common,

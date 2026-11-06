@@ -1,10 +1,23 @@
 import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, screen, shell } from 'electron';
 import { execFile } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import { Worker } from 'node:worker_threads';
+import type { TargetCheck } from '../core/target/planner';
+import { loadSettings, sanitizeSettings, saveSettings, type Settings } from './store';
+import {
+  checkItem,
+  fetchPrices,
+  priceRows,
+  pricesAreStale,
+  readTarget,
+  summarizeTarget,
+} from './targets';
 
 const CAPTURE_HOTKEY = 'Alt+F';
 const HIDE_OVERLAY_HOTKEY = 'Alt+Shift+F';
+const TARGET_HOTKEY = 'Alt+G';
 
 const OVERLAY_WIDTH = 480;
 const OVERLAY_MAX_HEIGHT = 760;
@@ -42,8 +55,8 @@ let mainWindow: BrowserWindow | null = null;
 let overlayWindow: BrowserWindow | null = null;
 let overlayReady: Promise<void> | null = null;
 let captureInProgress = false;
-let lastOverlayText: string | null = null;
-let overlayHasContent = false;
+let lastOverlay: { channel: string; payload: unknown } | null = null;
+let settings: Settings;
 
 app.setAppUserModelId('com.craftoverlay.app');
 
@@ -209,12 +222,11 @@ async function waitForCopiedItem(previous: string): Promise<string | null> {
   return looksLikeItem(current) && current !== previous ? current : null;
 }
 
-async function showOverlay(text: string | null): Promise<void> {
+async function showOverlay(channel: string, payload: unknown): Promise<void> {
   const window = await ensureOverlayWindow();
-  lastOverlayText = text;
-  overlayHasContent = true;
+  lastOverlay = { channel, payload };
   positionOverlay(window);
-  window.webContents.send('capture:result', text);
+  window.webContents.send(channel, payload);
 
   if (window.isVisible()) {
     window.moveTop();
@@ -225,7 +237,66 @@ async function showOverlay(text: string | null): Promise<void> {
   window.setAlwaysOnTop(true, 'screen-saver');
 }
 
-async function captureItemFromGame(): Promise<void> {
+function settingsPath(): string {
+  return join(app.getPath('userData'), 'settings.json');
+}
+
+function updateSettings(next: Settings): void {
+  settings = next;
+  saveSettings(settingsPath(), settings);
+}
+
+function settingsView(): unknown {
+  return {
+    tolerancePct: settings.tolerancePct,
+    league: settings.league,
+    pricesFetchedAt: settings.prices?.fetchedAt ?? null,
+    priceRows: priceRows(settings),
+    targets: settings.targets.flatMap((saved) => summarizeTarget(saved.id, saved.text) ?? []),
+  };
+}
+
+/** Ошибка сети не мешает проверке: считаем по старым и ручным ценам. */
+async function refreshPrices(): Promise<string | undefined> {
+  try {
+    updateSettings({ ...settings, prices: await fetchPrices(settings.league) });
+    return undefined;
+  } catch (error) {
+    console.error('Не удалось обновить цены:', error);
+    return 'Цены с poe.ninja не обновились: использованы сохранённые и ручные.';
+  }
+}
+
+function runCheck(text: string): Promise<TargetCheck> {
+  return new Promise<TargetCheck>((resolve, reject) => {
+    const worker = new Worker(join(__dirname, 'target-worker.cjs'));
+    worker.once('message', (check: TargetCheck) => {
+      resolve(check);
+      void worker.terminate();
+    });
+    worker.once('error', reject);
+    worker.postMessage({ text, settings });
+  }).catch((error: unknown) => {
+    console.error('Поток расчёта не запустился, считаем в основном:', error);
+    return checkItem(text, settings);
+  });
+}
+
+async function showTargetCheck(text: string | null): Promise<void> {
+  if (text === null) {
+    await showOverlay('capture:result', null);
+    return;
+  }
+  // Ждём сеть только без единой цены: устаревшие курсы обновятся к следующей проверке.
+  let pricesNote: string | undefined;
+  if (settings.prices?.league !== settings.league) pricesNote = await refreshPrices();
+  else if (pricesAreStale(settings)) void refreshPrices();
+  await showOverlay('target:result', { reports: [], divinePrice: null, pending: true });
+  const check = await runCheck(text);
+  await showOverlay('target:result', { ...check, ...(pricesNote ? { pricesNote } : {}) });
+}
+
+async function captureItemFromGame(showResult: (text: string | null) => Promise<void>): Promise<void> {
   if (captureInProgress) return;
   captureInProgress = true;
   console.log('[hotkey] pressed');
@@ -247,11 +318,11 @@ async function captureItemFromGame(): Promise<void> {
     console.log(`[capture] clipboard: ${text ? `${text.length} chars` : 'no item'}`);
 
     mainWindow?.webContents.send('capture:result', text);
-    await showOverlay(text);
+    await showResult(text);
   } catch (error) {
     console.error('Не удалось скопировать предмет из игры:', error);
     mainWindow?.webContents.send('capture:result', null);
-    await showOverlay(null);
+    await showOverlay('capture:result', null);
   } finally {
     if (clearedItem !== null && !clipboard.readText()) clipboard.writeText(clearedItem);
     captureInProgress = false;
@@ -259,6 +330,35 @@ async function captureItemFromGame(): Promise<void> {
 }
 
 app.whenReady().then(() => {
+  settings = loadSettings(settingsPath());
+
+  ipcMain.handle('settings:get', () => settingsView());
+  ipcMain.handle('settings:update', (_event, patch: unknown) => {
+    updateSettings(sanitizeSettings({ ...settings, ...(patch as object) }));
+    return settingsView();
+  });
+  ipcMain.handle('target:add', (_event, text: unknown) => {
+    if (typeof text !== 'string') return { error: 'Пустой текст.' };
+    const target = readTarget(text);
+    if ('error' in target) return target;
+    updateSettings(
+      sanitizeSettings({ ...settings, targets: [...settings.targets, { id: randomUUID(), text }] }),
+    );
+    return settingsView();
+  });
+  ipcMain.handle('target:remove', (_event, id: unknown) => {
+    updateSettings({ ...settings, targets: settings.targets.filter((saved) => saved.id !== id) });
+    return settingsView();
+  });
+  ipcMain.handle('plan:get', () => settings.activePlan);
+  ipcMain.handle('plan:save', (_event, plan: unknown) => {
+    updateSettings(sanitizeSettings({ ...settings, activePlan: plan }));
+  });
+  ipcMain.handle('prices:refresh', async () => ({
+    error: await refreshPrices(),
+    view: settingsView(),
+  }));
+
   ipcMain.handle('clipboard:read', () => clipboard.readText());
   ipcMain.handle('clipboard:write', (_event, text: unknown) => {
     if (typeof text === 'string') clipboard.writeText(text);
@@ -282,12 +382,19 @@ app.whenReady().then(() => {
   createOverlayWindow();
 
   const captureRegistered = globalShortcut.register(CAPTURE_HOTKEY, () => {
-    void captureItemFromGame();
+    void captureItemFromGame((text) => showOverlay('capture:result', text));
   });
   if (!captureRegistered) {
     console.warn(`Не удалось зарегистрировать глобальный хоткей ${CAPTURE_HOTKEY}`);
   } else {
     console.log(`[hotkey] registered ${CAPTURE_HOTKEY}`);
+  }
+
+  const targetRegistered = globalShortcut.register(TARGET_HOTKEY, () => {
+    void captureItemFromGame(showTargetCheck);
+  });
+  if (!targetRegistered) {
+    console.warn(`Не удалось зарегистрировать глобальный хоткей ${TARGET_HOTKEY}`);
   }
 
   const hideRegistered = globalShortcut.register(HIDE_OVERLAY_HOTKEY, () => {
@@ -297,8 +404,11 @@ app.whenReady().then(() => {
       console.log('[overlay] hidden');
       return;
     }
-    if (overlayHasContent) {
-      void showOverlay(lastOverlayText);
+    // Содержимое не пересылаем: в окне мог быть открыт план с отметками.
+    if (lastOverlay && overlayWindow) {
+      positionOverlay(overlayWindow);
+      overlayWindow.showInactive();
+      overlayWindow.setAlwaysOnTop(true, 'screen-saver');
       console.log('[overlay] shown again');
     }
   });
