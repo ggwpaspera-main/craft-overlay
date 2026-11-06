@@ -191,3 +191,27 @@ describe('analyzeCraft: нательный доспех на ЭЩ', () => {
     expect(advice.supported).toBe(false);
   });
 });
+
+describe('analyzeCraft: распознавание семейств модов', () => {
+  const amulet = { itemClass: 'Амулеты', category: 'jewellery', subtype: 'amulet' } as const;
+  const jewel = { itemClass: 'Самоцветы', category: 'jewel', subtype: undefined } as const;
+  const charm = { itemClass: 'Обереги', category: 'charm', subtype: 'charm' } as const;
+  const wand = { itemClass: 'Жезлы', category: 'weapon', subtype: 'wand' } as const;
+
+  it.each([
+    ['бонус крит. урона', jewel, 'suffix', '16% увеличение бонуса к критическому урону', 'good'],
+    ['все характеристики', amulet, 'suffix', '+10 ко всем характеристикам', 'good'],
+    ['длительность оберега', charm, 'suffix', '30% увеличение длительности эффекта оберега', 'good'],
+    ['добавленный физ. урон', amulet, 'prefix', 'Добавляет от 3 до 7 физического урона к атакам', 'good'],
+    ['% здоровья', amulet, 'prefix', '20% увеличение максимума здоровья', 'good'],
+    ['макс. сопротивление', amulet, 'suffix', '+1% к максимальному сопротивлению хаосу', 'good'],
+    ['срабатывающие чары', wand, 'prefix', 'Срабатывающие чары наносят увеличенный на 18% урон от чар', 'good'],
+    ['шипы, а не физ. урон', wand, 'prefix', 'От 1 до 5 физического урона шипами', 'bad'],
+    ['стат приспешников', wand, 'suffix', 'Приспешники имеют 10% повышение шанса критического удара', 'neutral'],
+    ['здоровье компаньонов', amulet, 'prefix', '20% увеличение максимума здоровья компаньонов', 'neutral'],
+    ['крит приспешников', wand, 'suffix', '20% увеличение бонуса к критическому урону приспешников', 'neutral'],
+  ] as const)('%s', (_name, slot, kind, text, verdict) => {
+    const item = makeItem({ ...slot, rarity: 'magic', properties: [], modifiers: [group(kind, text)] });
+    expect(analyzeCraft(item).mods[0]?.verdict).toBe(verdict);
+  });
+});

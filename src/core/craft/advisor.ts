@@ -102,43 +102,54 @@ interface FamilyRule {
 }
 
 const FAMILY_RULES: FamilyRule[] = [
+  // Статы приспешников и союзников не усиливают самого персонажа.
+  { family: 'unknown', pattern: /^(приспешники|союзники|компаньоны)/i },
   { family: 'skillLevels', pattern: /к уровню (всех )?камней умений|к уровню .*камней умений/i },
-  { family: 'spellDamage', pattern: /урона от чар/i },
-  { family: 'physicalDamage', pattern: /физического урона/i },
+  { family: 'spellDamage', pattern: /урона? от чар/i },
+  // Шипы и «добавляет» раньше physicalDamage: оба текста содержат «физического урона».
+  { family: 'thorns', pattern: /шипами/i },
   { family: 'addedDamage', pattern: /дополнительного урона|добавляет .*урона/i },
+  { family: 'physicalDamage', pattern: /физического урона/i },
   {
     family: 'defencePercent',
-    pattern: /(увеличение|повышение) (брони|уклонения|энергетического щита)/i,
+    pattern: /(увеличение|повышение) (максимума )?(брони|уклонения|энергетического щита)/i,
   },
   {
     family: 'defenceFlat',
     pattern: /к (броне|уклонению|максимуму энергетического щита)/i,
   },
-  { family: 'life', pattern: /к максимуму здоровья/i },
-  { family: 'mana', pattern: /к максимуму маны/i },
-  { family: 'spirit', pattern: /к духу/i },
-  { family: 'chaosResistance', pattern: /к сопротивлению хаосу/i },
+  {
+    family: 'life',
+    pattern: /к максимуму здоровья|увеличение максимума здоровья(?! компаньонов| подношений)/i,
+  },
+  { family: 'mana', pattern: /к максимуму маны|увеличение максимума маны/i },
+  { family: 'spirit', pattern: /к духу|увеличение духа/i },
+  { family: 'chaosResistance', pattern: /к (максимальному )?сопротивлению хаосу/i },
   {
     family: 'resistance',
-    pattern: /к сопротивлению (огню|холоду|молнии|всем стихиям)|к сопротивлениям/i,
+    pattern:
+      /к (максимальному )?сопротивлению (огню|холоду|молнии|всем стихиям)|к сопротивлениям|к максимуму сопротивлений/i,
   },
-  { family: 'attributes', pattern: /к (силе|ловкости|интеллекту|всем характеристикам)/i },
+  { family: 'attributes', pattern: /ко? (силе|ловкости|интеллекту|всем характеристикам)/i },
   { family: 'movementSpeed', pattern: /скорости передвижения/i },
   { family: 'attackSpeed', pattern: /скорости атаки/i },
   { family: 'castSpeed', pattern: /скорости сотворения чар/i },
-  { family: 'critChance', pattern: /шанса критического удара/i },
-  { family: 'critMulti', pattern: /бонусу критического урона/i },
-  { family: 'esRecharge', pattern: /скорости перезарядки энергетического щита/i },
-  { family: 'thorns', pattern: /шипами/i },
+  { family: 'critChance', pattern: /шанса критического удара|шансу критического удара/i },
+  {
+    family: 'critMulti',
+    pattern: /бонусу критического урона|бонуса к критическому урону(?! приспешников)/i,
+  },
+  { family: 'esRecharge', pattern: /(скорости|начала) перезарядки энергетического щита/i },
   { family: 'stunThreshold', pattern: /оглушени/i },
   { family: 'ailmentDuration', pattern: /длительности (кровотечения|отравления)/i },
   { family: 'attributeRequirements', pattern: /снижение требований к характеристикам/i },
   { family: 'lifeRegen', pattern: /регенерация .*здоровья/i },
   { family: 'flaskCharge', pattern: /зарядов|восполнения зарядов/i },
+  // Длительность оберега раньше flaskDuration и charmEffect: иначе её текст перехватят они.
+  { family: 'charmDuration', pattern: /длительности эффекта оберега/i },
   { family: 'flaskDuration', pattern: /длительности эффекта/i },
   { family: 'flaskEffect', pattern: /эффекта флакона|эффективности флакона/i },
   { family: 'charmEffect', pattern: /эффекта оберега|эффективности оберега/i },
-  { family: 'charmDuration', pattern: /длительности эффекта оберега/i },
   { family: 'quantity', pattern: /количества находимых предметов/i },
   { family: 'rarity', pattern: /редкости найденных предметов/i },
   { family: 'packSize', pattern: /размер групп монстров/i },

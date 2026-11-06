@@ -229,14 +229,21 @@ async function captureItemFromGame(): Promise<void> {
   if (captureInProgress) return;
   captureInProgress = true;
   console.log('[hotkey] pressed');
+  let clearedItem: string | null = null;
 
   try {
     // Важно: окно приложения НЕ показываем и НЕ фокусируем до отправки клавиш,
     // иначе Ctrl+Alt+C уйдёт в наше окно, а не в игру.
     const previous = await clipboard.readText();
+    // Повторное копирование того же предмета даёт тот же текст: старый предмет
+    // убираем, чтобы заметить новое копирование. Чужой текст в буфере не трогаем.
+    if (looksLikeItem(previous)) {
+      clearedItem = previous;
+      clipboard.clear();
+    }
     await sendAdvancedCopy();
     console.log('[capture] Ctrl+Alt+C sent');
-    const text = await waitForCopiedItem(previous);
+    const text = await waitForCopiedItem(clearedItem === null ? previous : '');
     console.log(`[capture] clipboard: ${text ? `${text.length} chars` : 'no item'}`);
 
     mainWindow?.webContents.send('capture:result', text);
@@ -246,6 +253,7 @@ async function captureItemFromGame(): Promise<void> {
     mainWindow?.webContents.send('capture:result', null);
     await showOverlay(null);
   } finally {
+    if (clearedItem !== null && !clipboard.readText()) clipboard.writeText(clearedItem);
     captureInProgress = false;
   }
 }
