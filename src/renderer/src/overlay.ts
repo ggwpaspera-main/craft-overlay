@@ -10,6 +10,7 @@
 import { parseItemText } from '../../core/parser';
 import { analyzeCraft } from '../../core/craft/advisor';
 import type { CraftAdvice } from '../../core/craft/advisor';
+import type { ActivePlan, StrategyResult, TargetCheck, TargetReport } from '../../core/target/planner';
 import type { ModifierGroup, ModValue, ParsedItem, StatLine } from '../../core/types';
 
 const RARITY_LABEL: Record<string, string> = {
@@ -427,6 +428,202 @@ function formatValues(values: ModValue[]): string {
 renderIdle();
 
 const bridge = window.craft;
+function formatPrice(exalted: number, divinePrice: number | null): string {
+  if (divinePrice && exalted >= divinePrice) return `${(exalted / divinePrice).toFixed(1)} div`;
+  return `${exalted < 10 ? exalted.toFixed(1) : Math.round(exalted)} ex`;
+}
+
+function formatCount(value: number): string {
+  return value < 10 ? value.toFixed(1) : String(Math.round(value));
+}
+
+function formatChance(strategy: StrategyResult): string {
+  if (strategy.probability === 0) return `< ${(100 / strategy.trials).toFixed(2)}%`;
+  return `${(strategy.probability * 100).toFixed(strategy.probability < 0.01 ? 2 : 1)}%`;
+}
+
+function strategyRow(strategy: StrategyResult, path: string, divinePrice: number | null): string {
+  const cost =
+    strategy.costPerSuccess === null
+      ? 'нет оценки'
+      : `${strategy.incompleteCost || strategy.basePriceMissing ? 'от ' : ''}${formatPrice(strategy.costPerSuccess, divinePrice)}`;
+  const bases =
+    strategy.basesPerSuccess !== null && strategy.basesPerSuccess > 1
+      ? `Риск потерять предмет ${((1 - strategy.probability) * 100).toFixed(1)}%, в среднем заготовок на успех: ${formatCount(strategy.basesPerSuccess)}${strategy.basePriceMissing ? ' (их цена не задана)' : ''}`
+      : '';
+  const uses = strategy.uses
+    .map((use) => `${use.label} × ${use.average.toFixed(1)}${use.price === null ? ' (нет цены)' : ''}`)
+    .join(', ');
+  return `
+    <li class="ov-strategy">
+      <div class="ov-strategy-head">
+        <span>${escapeHtml(strategy.label)}</span>
+        <span class="ov-strategy-value">${escapeHtml(formatChance(strategy))} · ${escapeHtml(cost)}</span>
+      </div>
+      <div class="ov-strategy-uses">${escapeHtml(uses)}</div>
+      ${bases ? `<div class="ov-strategy-risk">${escapeHtml(bases)}</div>` : ''}
+      <div class="ov-strategy-foot">
+        ${strategy.tag ? `<span class="ov-strategy-tag">${escapeHtml(strategy.tag)}</span>` : '<span></span>'}
+        <button class="ov-btn" type="button" data-path="${escapeHtml(path)}">Выбрать</button>
+      </div>
+    </li>
+  `;
+}
+
+const TARGET_STATUS: Record<string, string> = {
+  have: 'есть',
+  need: 'нужен',
+  special: 'особый',
+  impossible: 'нельзя',
+};
+const TARGET_VERDICT: Record<string, string> = {
+  ready: 'уже подходит',
+  reachable: 'достижимо',
+  partial: 'частично достижимо',
+  unreachable: 'нельзя изменить',
+};
+
+function targetBlock(report: TargetReport, reportIndex: number, divinePrice: number | null): string {
+  const mods = report.mods
+    .map(
+      (mod) =>
+        `<li class="ov-target-mod ${escapeHtml(mod.status)}">${escapeHtml(TARGET_STATUS[mod.status])}: ${escapeHtml(mod.text)}${mod.note ? ` <span class="ov-target-note">(${escapeHtml(mod.note)})</span>` : ''}</li>`,
+    )
+    .join('');
+  const reasons = report.reasons
+    .map((reason) => `<div class="ov-state-text">${escapeHtml(reason)}</div>`)
+    .join('');
+  const strategies = report.strategies
+    .map((strategy, index) => strategyRow(strategy, `${reportIndex}:${index}`, divinePrice))
+    .join('');
+  return block(
+    `${report.targetName} · ${TARGET_VERDICT[report.verdict]}`,
+    `${reasons}<ul class="ov-target-mods">${mods}</ul>${strategies ? `<ul class="ov-strategies">${strategies}</ul><div class="ov-state-hint">Шанс на один предмет · расход на успех с учётом потерянных заготовок</div>` : ''}`,
+  );
+}
+
+let currentCheck: TargetCheck | null = null;
+let activePlan: ActivePlan | null = null;
+
+function planBanner(): string {
+  if (!activePlan) return '';
+  return `
+    <div class="ov-plan-banner">
+      <span>Идёт план: ${escapeHtml(activePlan.label)}</span>
+      <button class="ov-btn" type="button" data-action="open-plan">Открыть</button>
+    </div>
+  `;
+}
+
+function renderTargetCheck(check: TargetCheck): void {
+  currentCheck = check;
+  if (check.pending) {
+    show('<div class="ov-state"><div class="ov-state-title">Считаю пути крафта…</div></div>');
+    return;
+  }
+  if (check.error) {
+    renderCaptureError(check.error);
+    return;
+  }
+  const note = check.pricesNote
+    ? `<div class="ov-state-text ov-error">${escapeHtml(check.pricesNote)}</div>`
+    : '';
+  show(
+    planBanner() +
+      note +
+      check.reports.map((report, index) => targetBlock(report, index, check.divinePrice)).join(''),
+  );
+}
+
+function stepRow(step: ActivePlan['steps'][number], index: number): string {
+  const attempts = step.repeat ? `<span class="ov-plan-attempts">попыток: ${step.attempts}</span>` : '';
+  const hint =
+    step.state === 'failed'
+      ? `<div class="ov-plan-hint">${step.repeat ? 'Повтори шаг или вернись к шагу с удалением мода.' : 'Нажми Alt+G на предмете: расчёт покажет новые пути.'}</div>`
+      : '';
+  const actions =
+    step.state === 'done'
+      ? `<button class="ov-btn" type="button" data-step="${index}" data-result="todo">Отменить</button>`
+      : `<button class="ov-btn ov-btn-ok" type="button" data-step="${index}" data-result="done">Готово</button>
+         <button class="ov-btn" type="button" data-step="${index}" data-result="failed">Не вышло</button>`;
+  return `
+    <li class="ov-plan-step ${escapeHtml(step.state)}">
+      <div class="ov-plan-title">${index + 1}. ${escapeHtml(step.title)} ${attempts}</div>
+      ${step.detail ? `<div class="ov-plan-detail">${escapeHtml(step.detail)}</div>` : ''}
+      ${hint}
+      <div class="ov-plan-actions">${actions}</div>
+    </li>
+  `;
+}
+
+function renderPlan(): void {
+  if (!activePlan) return;
+  const done = activePlan.steps.filter((step) => step.state === 'done').length;
+  const total = activePlan.steps.length;
+  show(`
+    <section class="ov-block">
+      <h2 class="ov-block-title">${escapeHtml(activePlan.targetName)}</h2>
+      <div class="ov-plan-head">
+        <span>${escapeHtml(activePlan.label)}</span>
+        <span class="ov-strategy-value">${done} из ${total}</span>
+      </div>
+      <ol class="ov-plan-steps">${activePlan.steps.map(stepRow).join('')}</ol>
+      ${done === total ? '<div class="ov-state-text">Все шаги пройдены. Проверь предмет через Alt+G.</div>' : ''}
+      <div class="ov-plan-actions">
+        ${currentCheck?.reports.length ? '<button class="ov-btn" type="button" data-action="back">К путям</button>' : ''}
+        <button class="ov-btn" type="button" data-action="close-plan">Закрыть план</button>
+      </div>
+    </section>
+  `);
+}
+
+function startPlan(path: string): void {
+  const [reportIndex, strategyIndex] = path.split(':').map(Number);
+  const report = currentCheck?.reports[reportIndex ?? -1];
+  const strategy = report?.strategies[strategyIndex ?? -1];
+  if (!report || !strategy) return;
+  activePlan = {
+    targetName: report.targetName,
+    label: strategy.label,
+    steps: strategy.steps.map((step) => ({ ...step, state: 'todo', attempts: 0 })),
+  };
+  void window.craft.savePlan(activePlan);
+  renderPlan();
+}
+
+function markStep(index: number, result: string): void {
+  const step = activePlan?.steps[index];
+  if (!activePlan || !step) return;
+  if (result === 'failed') step.attempts += 1;
+  step.state = result === 'done' || result === 'failed' ? result : 'todo';
+  void window.craft.savePlan(activePlan);
+  renderPlan();
+}
+
+root.addEventListener('click', (event) => {
+  const button = (event.target as Element).closest<HTMLElement>('button');
+  if (!button) return;
+  const { path, step, result, action } = button.dataset;
+  if (path) startPlan(path);
+  if (step !== undefined && result) markStep(Number(step), result);
+  if (action === 'open-plan') renderPlan();
+  if (action === 'back' && currentCheck) renderTargetCheck(currentCheck);
+  if (action === 'close-plan') {
+    activePlan = null;
+    void window.craft.savePlan(null);
+    if (currentCheck) renderTargetCheck(currentCheck);
+    else renderIdle();
+  }
+});
+
+void window.craft?.getPlan?.().then((plan) => {
+  activePlan = plan;
+});
+
+if (bridge && typeof bridge.onTargetResult === 'function') {
+  bridge.onTargetResult((check) => renderTargetCheck(check));
+}
+
 if (bridge && typeof bridge.onCapture === 'function') {
   bridge.onCapture((text) => handleCapture(text));
 } else {

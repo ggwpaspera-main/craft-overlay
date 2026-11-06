@@ -1,5 +1,6 @@
 import { parseItemText } from '../../core/parser';
 import { analyzeCraft } from '../../core/craft/advisor';
+import { initSettings } from './settings';
 import type { CraftAdvice } from '../../core/craft/advisor';
 import type { ModifierGroup, ModValue, ParsedItem, StatLine } from '../../core/types';
 
@@ -486,4 +487,5 @@ if (window.craft?.onCapture) {
   });
 }
 
+initSettings();
 render();

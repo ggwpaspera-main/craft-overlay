@@ -1,4 +1,12 @@
-export {};
+import type { ActivePlan, TargetCheck } from '../../core/target/planner';
+
+export interface SettingsView {
+  tolerancePct: number;
+  league: string;
+  pricesFetchedAt: number | null;
+  priceRows: Array<{ id: string; label: string; price: number | null; manual: number | null }>;
+  targets: Array<{ id: string; name: string; baseType: string; mods: string[]; basePrice: number | null }>;
+}
 
 declare global {
   interface Window {
@@ -8,6 +16,15 @@ declare global {
       hideOverlay(): void;
       quitApp(): void;
       moveOverlay(dx: number, dy: number): void;
+      getSettings(): Promise<SettingsView>;
+      updateSettings(patch: Record<string, unknown>): Promise<SettingsView>;
+      addTarget(text: string): Promise<SettingsView | { error: string }>;
+      removeTarget(id: string): Promise<SettingsView>;
+      setBasePrice(id: string, price: number | null): Promise<SettingsView>;
+      refreshPrices(): Promise<{ error?: string; view: SettingsView }>;
+      getPlan(): Promise<ActivePlan | null>;
+      savePlan(plan: ActivePlan | null): Promise<void>;
+      onTargetResult(callback: (check: TargetCheck) => void): () => void;
       onCapture(callback: (text: string | null) => void): () => void;
     };
   }
