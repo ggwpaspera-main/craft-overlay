@@ -1,5 +1,5 @@
 import type { ModifierGroup, ParsedItem } from '../types';
-import { filterBaseInfo } from '../filter/priors';
+import { resolveFilterBase } from '../filter/priors';
 
 /**
  * Крафт-советник (пробный режим).
@@ -63,6 +63,7 @@ export interface AdviceMod {
   tier?: number;
   verdict: AdviceVerdict;
   reason: string;
+  families: ModFamily[];
 }
 
 export interface AdviceCounts {
@@ -75,7 +76,16 @@ export interface AdviceCounts {
   bad: number;
 }
 
-export type EsBodyVerdict = 'junk' | 'playable' | 'keep' | 'white' | 'unknown';
+export type EsBodyVerdict =
+  | 'junk'
+  | 'playable'
+  | 'keep'
+  | 'white'
+  | 'magic'
+  | 'base-good'
+  | 'base-acceptable'
+  | 'base-bad'
+  | 'unknown';
 
 export interface EsBodyAdvice {
   es: number;
@@ -186,6 +196,57 @@ function familyOf(text: string): ModFamily {
     if (rule.pattern.test(text)) return rule.family;
   }
   return 'unknown';
+}
+
+/** Гибридный мод может давать два целевых семейства сразу. */
+function familiesOfGroup(group: ModifierGroup): ModFamily[] {
+  return [...new Set(group.lines.map((line) => familyOf(line.text)).filter((family) => family !== 'unknown'))];
+}
+
+const TIER_GOOD_MAX = 3;
+const TIER_NEUTRAL_MAX = 5;
+
+const FAMILY_LABEL: Partial<Record<ModFamily, string>> = {
+  defencePercent: '% защиты/ЭЩ',
+  defenceFlat: 'флэт защиты/ЭЩ',
+  life: 'жизнь',
+  mana: 'мана',
+  spirit: 'дух',
+  resistance: 'резисты',
+  chaosResistance: 'хаос-рез',
+  attributes: 'атрибуты',
+  movementSpeed: 'скорость передвижения',
+  attackSpeed: 'скорость атаки',
+  castSpeed: 'скорость каста',
+  critChance: 'шанс крита',
+  critMulti: 'крит-множитель',
+  esRecharge: 'перезарядка ЭЩ',
+  skillLevels: '+скиллы',
+  spellDamage: 'урон от чар',
+  physicalDamage: 'физ. урон',
+  addedDamage: 'добавленный урон',
+  flaskEffect: 'эффект флякона',
+  flaskDuration: 'длительность флякона',
+  flaskCharge: 'заряды флякона',
+  charmEffect: 'эффект оберега',
+  charmDuration: 'длительность оберега',
+  quantity: 'количество',
+  rarity: 'редкость',
+  packSize: 'размер групп',
+  monsterEffectiveness: 'эффективность монстров',
+  waystoneDrop: 'дроп waystone',
+  damage: 'урон',
+};
+
+function familyLabel(family: ModFamily): string {
+  return FAMILY_LABEL[family] ?? family;
+}
+
+function tierVerdict(tier: number | undefined): AdviceVerdict {
+  if (tier === undefined) return 'neutral';
+  if (tier <= TIER_GOOD_MAX) return 'good';
+  if (tier <= TIER_NEUTRAL_MAX) return 'neutral';
+  return 'bad';
 }
 
 function unsupported(summary: string, warnings: string[] = []): CraftAdvice {
@@ -512,20 +573,36 @@ function classify(
   kind: 'prefix' | 'suffix',
   text: string,
   profile: AdviceProfile,
+  families: ModFamily[],
+  tier: number | undefined,
 ): { verdict: AdviceVerdict; reason: string } {
   const family = familyOf(text);
-  if (family === 'unknown') {
+  const allFamilies = families.length > 0 ? families : family === 'unknown' ? [] : [family];
+  if (allFamilies.length === 0) {
     return {
       verdict: 'neutral',
       reason: 'мод не распознан — проверь под свой билд',
     };
   }
+
   const targets =
     kind === 'prefix' ? profile.targetPrefixFamilies : profile.targetSuffixFamilies;
-  if (targets.includes(family)) {
-    return { verdict: 'good', reason: `целевой мод для ${profile.label}` };
+  const targetFamily = allFamilies.find((candidate) => targets.includes(candidate));
+  if (targetFamily) {
+    const verdict = tierVerdict(tier);
+    if (verdict === 'good') {
+      return { verdict, reason: `целевой мод, тир ${tier} — сильный` };
+    }
+    if (verdict === 'neutral') {
+      return {
+        verdict,
+        reason: tier === undefined ? 'целевой мод, но тир не виден' : `целевой мод, тир ${tier} — средний`,
+      };
+    }
+    return { verdict, reason: `целевой мод, но тир ${tier} — слабый` };
   }
-  if (BAD_FAMILIES.has(family)) {
+
+  if (allFamilies.some((candidate) => BAD_FAMILIES.has(candidate))) {
     return { verdict: 'bad', reason: 'слабый мод для этого слота' };
   }
   return { verdict: 'neutral', reason: 'полезно, но не ключевой мод' };
@@ -545,13 +622,32 @@ function buildEsBodyAdvice(item: ParsedItem): EsBodyAdvice | undefined {
   const quality = item.quality ?? null;
   const sockets = item.sockets.length;
   const runes = item.runes.length;
-  const base = filterBaseInfo(item.baseType);
+  const base = resolveFilterBase(item.baseType, item.name);
   const checks: string[] = [];
   let verdict: EsBodyVerdict = 'unknown';
 
   if (item.rarity === 'normal') {
     verdict = 'white';
     checks.push(`ES ${es} на белой базе — это ещё не итог, сначала 2 мода.`);
+    if (base && item.itemLevel !== undefined) {
+      if (base.tier === 't1') {
+        if (item.itemLevel >= 82) {
+          verdict = 'base-good';
+          checks.push(`База ${base.entry.en} T1, ilvl ${item.itemLevel} — хорошо.`);
+        } else if (item.itemLevel >= 79) {
+          verdict = 'base-acceptable';
+          checks.push(`База ${base.entry.en} T1, ilvl ${item.itemLevel} — приемлемо.`);
+        } else {
+          verdict = 'base-bad';
+          checks.push(`База ${base.entry.en} T1, ilvl ${item.itemLevel} — плохо для крафта.`);
+        }
+      } else {
+        checks.push(`База ${base.entry.en}, ${base.tierLabel}, ilvl ${item.itemLevel}.`);
+      }
+    }
+  } else if (item.rarity === 'magic') {
+    verdict = 'magic';
+    checks.push(`ES ${es} — текущий ES magic-предмета; порог 800 к magic не применяем.`);
   } else if (es < 800) {
     verdict = 'junk';
     checks.push(`ES ${es} < 800 — неликвид, не вкладывать валюту.`);
@@ -620,13 +716,15 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
   const mods: AdviceMod[] = groups.map((group) => {
     const kind = group.kind === 'prefix' ? 'prefix' : 'suffix';
     const text = groupText(group);
-    const result = classify(kind, text, profile);
+    const families = familiesOfGroup(group);
+    const result = classify(kind, text, profile, families, group.tier);
     return {
       kind,
       text,
       ...(group.tier !== undefined ? { tier: group.tier } : {}),
       verdict: result.verdict,
       reason: result.reason,
+      families,
     };
   });
 
@@ -646,6 +744,19 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
     neutral: mods.filter((mod) => mod.verdict === 'neutral').length,
     bad: mods.filter((mod) => mod.verdict === 'bad').length,
   };
+
+  const presentPrefixFamilies = new Set(
+    mods.filter((mod) => mod.kind === 'prefix').flatMap((mod) => mod.families),
+  );
+  const presentSuffixFamilies = new Set(
+    mods.filter((mod) => mod.kind === 'suffix').flatMap((mod) => mod.families),
+  );
+  const missingPrefixes = profile.targetPrefixFamilies.filter(
+    (family) => !presentPrefixFamilies.has(family),
+  );
+  const missingSuffixes = profile.targetSuffixFamilies.filter(
+    (family) => !presentSuffixFamilies.has(family),
+  );
 
   const warnings: string[] = [];
   if (groups.length > 0 && groups.every((group) => group.tier === undefined)) {
@@ -770,7 +881,34 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
 
   steps.push('Оценка без цен: ориентир — целевые моды, тиры и открытые слоты.');
 
-  if (esBody) {
+  if (item.rarity === 'rare' && profile.mode !== 'waystone' && profile.mode !== 'tablet') {
+    if (counts.bad >= 2) {
+      summary = `Два и более слабых мода. ${summary}`;
+      steps = [
+        'Выкинуть: два и более плохих мода — докрафт не оправдан.',
+        'Если база T1/T2 — искать новый экземпляр.',
+      ];
+    } else {
+      const prefixNeed = missingPrefixes.map(familyLabel);
+      const suffixNeed = missingSuffixes.map(familyLabel);
+      if (openPrefixes > 0 && prefixNeed.length > 0) {
+        steps.unshift(
+          `Нужен префикс: ${prefixNeed.join(', ')} — докрафтить в открытый префикс.`,
+        );
+      } else if (openPrefixes === 0 && prefixNeed.length > 0) {
+        steps.unshift(`Не хватает префикса (${prefixNeed.join(', ')}), но все префиксы заняты.`);
+      }
+      if (openSuffixes > 0 && suffixNeed.length > 0) {
+        steps.unshift(
+          `Нужен суффикс: ${suffixNeed.join(', ')} — докрафтить в открытый суффикс.`,
+        );
+      } else if (openSuffixes === 0 && suffixNeed.length > 0) {
+        steps.unshift(`Не хватает суффикса (${suffixNeed.join(', ')}), но все суффиксы заняты.`);
+      }
+    }
+  }
+
+  if (esBody && !(item.rarity === 'rare' && counts.bad >= 2)) {
     if (esBody.verdict === 'junk') {
       summary = `ES ${esBody.es}: неликвид. ${summary}`;
       steps = [
@@ -783,6 +921,18 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
     } else if (esBody.verdict === 'keep') {
       summary = `ES ${esBody.es} (≥900): не трогать. ${summary}`;
       steps.unshift('ES ≥ 900 — сильный экземпляр; не рероллить, только аккуратный докрафт при необходимости.');
+    } else if (esBody.verdict === 'magic') {
+      summary = `ES ${esBody.es} (текущий magic; порог 800 не применяется). ${summary}`;
+    } else if (esBody.verdict === 'base-bad') {
+      summary = `База T1, ilvl ${item.itemLevel ?? '?'} — плохо. ${summary}`;
+      steps = [
+        `База T1, но ilvl ${item.itemLevel ?? '?'} — для крафта лучше 82+; на 79–81 приемлемо.`,
+        'Этот экземпляр не стоит развивать: дождись базы 82+ или возьми 79–81.',
+      ];
+    } else if (esBody.verdict === 'base-good') {
+      summary = `База T1, ilvl ${item.itemLevel ?? '?'} — хорошо. ${summary}`;
+    } else if (esBody.verdict === 'base-acceptable') {
+      summary = `База T1, ilvl ${item.itemLevel ?? '?'} — приемлемо. ${summary}`;
     } else if (esBody.verdict === 'white') {
       summary = `Белая база, ES ${esBody.es}. ${summary}`;
     }

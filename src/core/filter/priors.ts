@@ -75,6 +75,34 @@ export function filterBaseInfo(baseType: string | undefined): FilterBaseInfo | n
   return index.get(normalize(baseType)) ?? null;
 }
 
+/**
+ * Для magic-предмета база спрятана в полном имени:
+ * «Ослепительное Нечестивое облачение вулкана» → Vile Robe.
+ * Ищем самую длинную известную базу внутри имени.
+ */
+export function resolveFilterBase(
+  baseType: string | undefined,
+  name: string | undefined,
+): FilterBaseInfo | null {
+  const direct = filterBaseInfo(baseType ?? name);
+  if (direct) return direct;
+  if (!name) return null;
+
+  const normalizedName = normalize(name);
+  let best: { info: FilterBaseInfo; length: number } | null = null;
+  for (const entry of data.bases) {
+    const keys = [entry.ru, entry.en]
+      .filter((value): value is string => typeof value === 'string' && value.length > 0)
+      .map(normalize);
+    for (const key of keys) {
+      if (key.length < 5 || !normalizedName.includes(key)) continue;
+      const info = index.get(key);
+      if (info && (!best || key.length > best.length)) best = { info, length: key.length };
+    }
+  }
+  return best?.info ?? null;
+}
+
 export function filterTierLabel(tier: FilterBaseTier): string {
   return TIER_LABEL[tier];
 }
