@@ -1,4 +1,4 @@
-import type { ModifierGroup, ParsedItem } from '../types';
+import type { ModifierGroup, ParsedItem, StatLine } from '../types';
 import { resolveFilterBase } from '../filter/priors';
 
 /**
@@ -79,12 +79,38 @@ export interface AdviceCounts {
   bad: number;
 }
 
+export type ShortVerdictTone = 'good' | 'bad' | 'warn' | 'info';
+
+export interface ShortVerdict {
+  tone: ShortVerdictTone;
+  title: string;
+  reason: string;
+  action: string;
+}
+
+export type ResistanceElement = 'fire' | 'cold' | 'lightning' | 'chaos';
+
+export interface EssenceAdvice {
+  element: ResistanceElement;
+  name: string;
+  effect: string;
+  shortAction: string;
+}
+
+export interface AbyssAdvice {
+  title: string;
+  recipe: string[];
+  action: string;
+}
+
 export type EsBodyVerdict =
   | 'junk'
   | 'playable'
   | 'keep'
   | 'white'
   | 'magic'
+  | 'incomplete'
+  | 'finishable'
   | 'base-good'
   | 'base-acceptable'
   | 'base-bad'
@@ -99,6 +125,12 @@ export interface EsBodyAdvice {
   baseTierLabel: string | null;
   planLabel: string;
   targetEs: number;
+  projectedEs: number;
+  qualityOnlyEs: number;
+  runesOnlyEs: number;
+  qualityGain: number;
+  runeGain: number;
+  isFinished: boolean;
   verdict: EsBodyVerdict;
   checks: string[];
 }
@@ -114,6 +146,9 @@ export interface CraftAdvice {
   counts: AdviceCounts;
   warnings: string[];
   esBody?: EsBodyAdvice;
+  shortVerdict?: ShortVerdict;
+  essenceAdvice?: EssenceAdvice;
+  abyssAdvice?: AbyssAdvice;
 }
 
 interface AdviceProfile {
@@ -230,7 +265,6 @@ function esTierVerdict(channel: EsChannel, tier: number | undefined): AdviceVerd
     return 'bad';
   }
   if (tier <= 3) return 'good';
-  if (tier === 4) return 'neutral';
   return 'bad';
 }
 
@@ -267,7 +301,7 @@ function esPrefixPlan(channels: EsChannel[]): EsPrefixPlan {
 }
 
 const TIER_GOOD_MAX = 3;
-const TIER_NEUTRAL_MAX = 5;
+const TIER_NEUTRAL_MAX = 3;
 
 const FAMILY_LABEL: Partial<Record<ModFamily, string>> = {
   defencePercent: '% защиты/ЭЩ',
@@ -707,6 +741,52 @@ function makeSummary(baseLabel: string, itemLevel: number | undefined, action: s
 }
 
 /** ES-тушка: пороги и проверка качества/рун. Работает только для body armour. */
+/** Сумма % increased ES из локальных модов предмета. */
+function percentFromLine(line: StatLine): number {
+  const fromValues = line.values.reduce((sum, value) => sum + (value.rolled ?? 0), 0);
+  if (fromValues > 0) return fromValues;
+  const match = line.text.match(/(\d+(?:[.,]\d+)?)%/);
+  return match ? Number.parseFloat(match[1]!.replace(',', '.')) : 0;
+}
+
+function explicitEsPercent(item: ParsedItem): number {
+  let total = 0;
+  for (const group of item.modifiers) {
+    if (group.source !== 'explicit') continue;
+    if (group.kind !== 'prefix' && group.kind !== 'suffix') continue;
+    for (const line of group.lines) {
+      if (!/(?:увеличение|повышение).*энергетического щита/i.test(line.text)) continue;
+      total += percentFromLine(line);
+    }
+  }
+  return total;
+}
+
+/** Сумма % increased ES из рун (например, 2×18% = 36%). */
+function runeEsPercent(item: ParsedItem): number {
+  let total = 0;
+  for (const line of item.runes) {
+    if (!/(?:увеличение|повышение).*энергетического щита/i.test(line.text)) continue;
+    total += percentFromLine(line);
+  }
+  return total;
+}
+
+function projectedEs(
+  currentEs: number,
+  currentQuality: number,
+  targetQuality: number,
+  currentRunes: number,
+  targetRunes: number,
+  esPercent: number,
+): number {
+  const baseMultiplier = 1 + esPercent / 100;
+  const denominator = (baseMultiplier + currentRunes / 100) * (1 + currentQuality / 100);
+  if (denominator <= 0) return currentEs;
+  const numerator = (baseMultiplier + targetRunes / 100) * (1 + targetQuality / 100);
+  return Math.round((currentEs * numerator) / denominator);
+}
+
 function buildEsBodyAdvice(item: ParsedItem): EsBodyAdvice | undefined {
   if (item.category !== 'armour' || item.subtype !== 'bodyArmour') return undefined;
   const es = numericProperty(item, 'energyShield');
@@ -715,6 +795,38 @@ function buildEsBodyAdvice(item: ParsedItem): EsBodyAdvice | undefined {
   const quality = item.quality ?? null;
   const sockets = item.sockets.length;
   const runes = item.runes.length;
+  const currentQuality = quality ?? 0;
+  const currentRunes = runeEsPercent(item);
+  const esPercent = explicitEsPercent(item);
+  const targetQuality = Math.max(20, currentQuality);
+  const targetRunes = Math.max(36, currentRunes);
+  const projected = projectedEs(
+    es,
+    currentQuality,
+    targetQuality,
+    currentRunes,
+    targetRunes,
+    esPercent,
+  );
+  const qualityOnly = projectedEs(
+    es,
+    currentQuality,
+    targetQuality,
+    currentRunes,
+    currentRunes,
+    esPercent,
+  );
+  const runesOnly = projectedEs(
+    es,
+    currentQuality,
+    currentQuality,
+    currentRunes,
+    targetRunes,
+    esPercent,
+  );
+  const qualityGain = qualityOnly - es;
+  const runeGain = runesOnly - es;
+  const isFinished = currentQuality >= 20 && currentRunes >= 36;
   const base = resolveFilterBase(item.baseType, item.name);
   const prefixChannels = item.modifiers
     .filter(
@@ -723,6 +835,9 @@ function buildEsBodyAdvice(item: ParsedItem): EsBodyAdvice | undefined {
     )
     .map((group) => esChannelOf(familiesOfGroup(group)))
     .filter((channel): channel is EsChannel => channel !== undefined);
+  const prefixCount = item.modifiers.filter(
+    (modifier) => modifier.source === 'explicit' && modifier.kind === 'prefix',
+  ).length;
   const plan = esPrefixPlan(prefixChannels);
   const checks: string[] = [];
   let verdict: EsBodyVerdict = 'unknown';
@@ -749,17 +864,45 @@ function buildEsBodyAdvice(item: ParsedItem): EsBodyAdvice | undefined {
   } else if (item.rarity === 'magic') {
     verdict = 'magic';
     checks.push(`ES ${es} — текущий ES magic-предмета; порог ${plan.threshold} к magic не применяем.`);
-  } else if (es < plan.threshold) {
-    verdict = 'junk';
+  } else if (prefixCount < 3) {
+    verdict = 'incomplete';
     checks.push(
-      `ES ${es} < ${plan.threshold} для плана «${plan.label}» — неликвид, не вкладывать валюту.`,
+      `Префиксов: ${prefixCount}/3 — ES ${es} ещё не итог; порог ${plan.threshold} не применяем.`,
     );
-  } else if (es < plan.threshold + 100) {
-    verdict = 'playable';
-    checks.push(`ES ${es} — план «${plan.label}» закрывает порог ${plan.threshold}; пойдёт для докрафта.`);
+    checks.push('Сначала надо добавить префикс: очернение или Exalt.');
   } else {
-    verdict = 'keep';
-    checks.push(`ES ${es} ≥ ${plan.threshold + 100} — сильный результат, не рероллить.`);
+    const projectedOk = projected > plan.threshold;
+    if (es > plan.threshold) {
+      if (es <= plan.threshold + 100) {
+        verdict = 'playable';
+        checks.push(`ES ${es} — план «${plan.label}» пройден; пойдёт для докрафта.`);
+      } else {
+        verdict = 'keep';
+        checks.push(`ES ${es} > ${plan.threshold + 100} — сильный результат, не рероллить.`);
+      }
+    } else if (!projectedOk) {
+      verdict = 'junk';
+      checks.push(
+        `ES ${es}, прогноз после заточки и рун ${projected} ≤ ${plan.threshold} — неликвид, не вкладывать валюту.`,
+      );
+    } else if (!isFinished) {
+      verdict = 'finishable';
+      checks.push(
+        `ES ${es} → прогноз ${projected} после 20% качества и 2 рун по 18% ES; порог ${plan.threshold} пройден.`,
+      );
+    } else {
+      verdict = 'junk';
+      checks.push(
+        `ES ${es} ≤ ${plan.threshold} для плана «${plan.label}» — неликвид, не вкладывать валюту.`,
+      );
+    }
+    checks.push(
+      `Заточка 0→20%: ${qualityOnly} ES (${qualityGain >= 0 ? '+' : ''}${qualityGain}); 2 руны по 18% ES: ${runesOnly} ES (${runeGain >= 0 ? '+' : ''}${runeGain}); вместе: ${projected} ES.`,
+    );
+  }
+
+  if (item.rarity === 'rare') {
+    checks.push(`Префиксов: ${prefixCount}/3.`);
   }
 
   if (item.rarity === 'rare' && prefixChannels.includes('hybridLife')) {
@@ -784,10 +927,10 @@ function buildEsBodyAdvice(item: ParsedItem): EsBodyAdvice | undefined {
 
   if (sockets === 0) {
     checks.push('Нет сокетов под руны — проверь, можно ли добавить.');
-  } else if (runes < sockets) {
-    checks.push(`Сокеты: ${sockets}, рун: ${runes} — есть пустые сокеты.`);
+  } else if (runes === 0) {
+    checks.push(`Сокеты: ${sockets}, рун: 0 — есть пустые сокеты.`);
   } else {
-    checks.push(`Сокеты: ${sockets}, рун: ${runes}.`);
+    checks.push(`Сокеты: ${sockets}, руны вставлены.`);
   }
 
   if (base) {
@@ -805,8 +948,237 @@ function buildEsBodyAdvice(item: ParsedItem): EsBodyAdvice | undefined {
     baseTierLabel: base?.tierLabel ?? null,
     planLabel: plan.label,
     targetEs: plan.threshold,
+    projectedEs: projected,
+    qualityOnlyEs: qualityOnly,
+    runesOnlyEs: runesOnly,
+    qualityGain,
+    runeGain,
+    isFinished,
     verdict,
     checks,
+  };
+}
+
+function modBrief(mod: AdviceMod): string {
+  const kind = mod.kind === 'prefix' ? 'P' : mod.kind === 'suffix' ? 'S' : '?';
+  const tier = mod.tier !== undefined ? ` T${mod.tier}` : '';
+  return `${kind}${tier} ${mod.text}`;
+}
+
+const ESSENCE_BY_ELEMENT: Record<ResistanceElement, Omit<EssenceAdvice, 'element' | 'shortAction'>> = {
+  fire: {
+    name: 'Большая сущность изоляции',
+    effect: '+31–35% к сопротивлению огню (T3)',
+  },
+  cold: {
+    name: 'Большая сущность таяния',
+    effect: '+31–35% к сопротивлению холоду (T3)',
+  },
+  lightning: {
+    name: 'Большая сущность заземления',
+    effect: '+31–35% к сопротивлению молнии (T3)',
+  },
+  chaos: {
+    name: 'Большая сущность гибели',
+    effect: '+16–19% к сопротивлению хаосу (T3)',
+  },
+};
+
+const RESISTANCE_ORDER: ResistanceElement[] = ['fire', 'cold', 'lightning', 'chaos'];
+
+function resistanceElementsInText(text: string): ResistanceElement[] {
+  const lower = text.toLowerCase();
+  const elements: ResistanceElement[] = [];
+  if (lower.includes('огню')) elements.push('fire');
+  if (lower.includes('холоду')) elements.push('cold');
+  if (lower.includes('молнии')) elements.push('lightning');
+  if (lower.includes('хаосу')) elements.push('chaos');
+  return elements;
+}
+
+/** Для magic: Большая сущность нужного резиста вместо случайного Regal. */
+function recommendEssence(item: ParsedItem, mods: AdviceMod[]): EssenceAdvice | null {
+  if (item.rarity !== 'magic') return null;
+  if (mods.length < 2) return null;
+  if (mods.some((mod) => mod.verdict === 'bad')) return null;
+  if (!mods.some((mod) => mod.verdict === 'good')) return null;
+
+  const present = new Set<ResistanceElement>();
+  for (const mod of mods) {
+    if (mod.kind !== 'suffix') continue;
+    for (const element of resistanceElementsInText(mod.text)) present.add(element);
+  }
+
+  const missing = RESISTANCE_ORDER.find((element) => !present.has(element));
+  if (!missing) return null;
+  const essence = ESSENCE_BY_ELEMENT[missing];
+  return {
+    element: missing,
+    ...essence,
+    shortAction: `${essence.name} — ${essence.effect}; либо Regal, если хочешь рискнуть ради ES-префикса.`,
+  };
+}
+
+function buildShortVerdict(
+  item: ParsedItem,
+  mods: AdviceMod[],
+  counts: AdviceCounts,
+  esBody: EsBodyAdvice | undefined,
+  abyssAdvice: AbyssAdvice | undefined,
+  badLimit: number,
+  desecratedAlready: boolean,
+): ShortVerdict {
+  if (item.category === 'waystone' || item.category === 'tablet') {
+    return {
+      tone: 'info',
+      title: 'Оценка модов',
+      reason: 'Путевой камень/плитка оцениваются по модам для маппинга.',
+      action: 'Смотри подробности: количество, редкость, опасность.',
+    };
+  }
+
+  const bad = mods.filter((mod) => mod.verdict === 'bad');
+  const good = mods.filter((mod) => mod.verdict === 'good');
+  const essence = recommendEssence(item, mods);
+
+  if (item.rarity === 'normal') {
+    if (esBody?.verdict === 'base-bad') {
+      return {
+        tone: 'bad',
+        title: 'База плохая',
+        reason: `T1-база, но ilvl ${item.itemLevel ?? '?'}; для крафта нужен 82+, 79–81 — приемлемо.`,
+        action: 'Не крафтить этот экземпляр — искать базу получше.',
+      };
+    }
+    if (esBody?.verdict === 'base-good' || esBody?.verdict === 'base-acceptable') {
+      return {
+        tone: esBody.verdict === 'base-good' ? 'good' : 'warn',
+        title: esBody.verdict === 'base-good' ? 'База хорошая' : 'База приемлемая',
+        reason: `T1-база, ilvl ${item.itemLevel ?? '?'}.`,
+        action: 'Начинаем: Сфера превращения → Сфера усиления.',
+      };
+    }
+    return {
+      tone: 'info',
+      title: 'База вне тиров',
+      reason: 'Нет уверенного тира базы — оценка предварительная.',
+      action: 'Можно попробовать, но без гарантии.',
+    };
+  }
+
+  if (item.rarity === 'magic') {
+    if (mods.length < 2 && counts.bad === 0) {
+      const noMods = mods.length === 0;
+      return {
+        tone: 'info',
+        title: noMods ? 'Модов нет' : 'Один мод',
+        reason: noMods
+          ? 'Волшебный предмет без явных аффиксов.'
+          : 'На magic-предмете пока только один аффикс.',
+        action: 'Сначала Сфера усиления (Augmentation) — добавить мод.',
+      };
+    }
+    if (bad.length > 0) {
+      return {
+        tone: 'bad',
+        title: 'Есть мусорный мод',
+        reason: `${bad.map(modBrief).join('; ')} — мусор.`,
+        action: 'Не продолжать крафт: выкинь / Alchemy / новый base.',
+      };
+    }
+    if (counts.good >= 2) {
+      return {
+        tone: 'good',
+        title: 'Предмет хороший',
+        reason: `${good.map(modBrief).join('; ')} — оба мода целевые.`,
+        action: essence ? `Продолжаем: ${essence.shortAction}` : 'Продолжаем: Сфера царей (Regal).',
+      };
+    }
+    if (counts.good === 1) {
+      return {
+        tone: 'warn',
+        title: 'Один хороший мод',
+        reason: `${good.map(modBrief).join('; ')} — целевой, второй мод не дотягивает.`,
+        action: essence
+          ? `Можно ${essence.shortAction}`
+          : 'Можно Regal, но без гарантии — оцени открытые слоты.',
+      };
+    }
+    return {
+      tone: 'bad',
+      title: 'Моды слабые',
+      reason: 'Ни один мод не попал в целевые.',
+      action: 'Не продолжать: Alchemy / новый base.',
+    };
+  }
+
+  if (counts.bad >= badLimit) {
+    return {
+      tone: 'bad',
+      title: badLimit >= 2 ? 'Два и более плохих мода' : 'Есть плохой мод',
+      reason: `${bad.map(modBrief).join('; ')}.`,
+      action: 'Не продолжать крафт: выкинь / новый base.',
+    };
+  }
+  if (esBody?.verdict === 'incomplete') {
+    const prefixCount = mods.filter((mod) => mod.kind === 'prefix').length;
+    return {
+      tone: 'good',
+      title: 'Продолжаем крафт',
+      reason: `Префиксов ${prefixCount}/3, ES ${esBody.es} — текущий, мусора нет.`,
+      action: abyssAdvice
+        ? 'Очернить префикс: ребро + омены, затем докрафт Exalt-ами.'
+        : desecratedAlready
+          ? 'Очернение уже использовано — докрафт Exalt-ами в открытый префикс.'
+          : 'Докрафт префиксов Exalt-ами.',
+    };
+  }
+  if (esBody?.verdict === 'finishable') {
+    return {
+      tone: 'good',
+      title: 'Предмет хороший, но не закончен',
+      reason: `ES ${esBody.es} → прогноз ${esBody.projectedEs} после качества и рун; моды целевые.`,
+      action: `Заточить до 20% и вставить 2 руны по 18% ES; прогноз ${esBody.projectedEs} ES — предмет хороший.`,
+    };
+  }
+  if (esBody?.verdict === 'junk') {
+    return {
+      tone: 'bad',
+      title: 'ES ниже порога',
+      reason: `ES ${esBody.es} ≤ ${esBody.targetEs} для плана «${esBody.planLabel}».`,
+      action: 'Не вкладывать валюту — выкинь/продай.',
+    };
+  }
+  if (counts.good >= 2) {
+    const openSlots = counts.openPrefixes + counts.openSuffixes;
+    const unfinished =
+      esBody !== undefined &&
+      (esBody.quality === null || esBody.quality < 20 || esBody.runes === 0);
+    return {
+      tone: 'good',
+      title: 'Предмет хороший',
+      reason: `${good.map(modBrief).join('; ')} — целевые моды.`,
+      action:
+        openSlots > 0
+          ? 'Продолжаем: докрафт открытых слотов / Exalt.'
+          : unfinished
+            ? 'Моды не трогать; осталось качество/руны.'
+            : 'Предмет готов: моды, качество и руны не трогать.',
+    };
+  }
+  if (counts.good === 1) {
+    return {
+      tone: 'warn',
+      title: 'Один хороший мод',
+      reason: `${good[0] ? modBrief(good[0]) : 'целевой мод'} — остальное слабое.`,
+      action: 'Докрафт рискованный; для новичка — новый base.',
+    };
+  }
+  return {
+    tone: 'bad',
+    title: 'Нет целевых модов',
+    reason: 'Целевых модов нет.',
+    action: 'Не тратить валюту — выкинь.',
   };
 }
 
@@ -871,6 +1243,30 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
     bad: mods.filter((mod) => mod.verdict === 'bad').length,
   };
 
+  const totalMods = groups.length;
+  const badLimit = totalMods >= 6 ? 2 : 1;
+  const stopByBad = counts.bad >= badLimit;
+  const desecratedAlready =
+    item.flags.desecrated === true ||
+    groups.some((group) => group.states.includes('desecrated'));
+  const abyssAdvice: AbyssAdvice | undefined =
+    esItem &&
+    item.rarity === 'rare' &&
+    prefixes < 3 &&
+    counts.bad < badLimit &&
+    !desecratedAlready
+      ? {
+          title: 'Очернить префикс',
+          recipe: [
+            'Активируй Предзнаменование некромантии левши.',
+            'Активируй Предзнаменование отголосков Бездны.',
+            'Примени Сохранившееся ребро или Древнее ребро.',
+            'В Колодце душ выбери вариант с префиксом.',
+          ],
+          action: 'Очернение делается один раз; затем докрафт Exalt-ами.',
+        }
+      : undefined;
+
   const presentPrefixFamilies = new Set(
     mods.filter((mod) => mod.kind === 'prefix').flatMap((mod) => mod.families),
   );
@@ -902,6 +1298,7 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
   const baseLabel = item.name ?? item.baseType ?? item.itemClass;
   const levelText = item.itemLevel !== undefined ? `, ilvl ${item.itemLevel}` : '';
   const esBody = buildEsBodyAdvice(item);
+  const essenceAdvice = recommendEssence(item, mods) ?? undefined;
 
   let summary = '';
   let steps: string[] = [];
@@ -926,10 +1323,11 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
     ];
   } else if (item.rarity === 'magic') {
     if (counts.prefixes + counts.suffixes === 0) {
-      summary = makeSummary(`Волшебный ${baseLabel}`, item.itemLevel, 'Явных модов не видно.');
+      summary = makeSummary(`Волшебный ${baseLabel}`, item.itemLevel, 'Модов нет.');
       steps = [
-        'Проверь копирование: нужен advanced-copy (Alt+F / Ctrl+Alt+C).',
-        'Если модов действительно нет — начни с Сферы превращения → Сферы усиления.',
+        'Сфера усиления (Orb of Augmentation) — добавить первый мод.',
+        'Если мод окажется мусорным — не продолжать: Alchemy / новый base.',
+        'Если мод целевой — оценить его тир и решить по второму моду.',
       ];
     } else if (counts.prefixes + counts.suffixes === 1) {
       if (counts.good > 0) {
@@ -971,7 +1369,7 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
       summary = makeSummary(`Редкий ${baseLabel}`, item.itemLevel, 'Целевых модов нет.');
       steps = [
         'Не тратить валюту на докрафт.',
-        'Сфера хаоса / алхимии рискованны — лучше новый base.',
+        'Сфера хаоса рискованна — лучше новый base.',
       ];
     } else if (counts.good >= 2 && openSlots > 0) {
       summary = makeSummary(
@@ -1007,18 +1405,42 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
       summary = makeSummary(`Целевых модов мало. ${baseLabel}`, item.itemLevel, '');
       steps = [
         'Не тратить дорогую валюту.',
-        'Сфера алхимии / новый base; Сфера хаоса без понимания рисков не советую.',
+        'Новый base; Сфера хаоса без понимания рисков не советую.',
       ];
     }
   }
 
   steps.push('Оценка без цен: ориентир — целевые моды, тиры и открытые слоты.');
 
+  if (abyssAdvice) {
+    steps.unshift(...abyssAdvice.recipe, abyssAdvice.action);
+  } else if (item.rarity === 'rare' && prefixes < 3 && desecratedAlready) {
+    steps.unshift('Очернение уже использовано — дальше только Exalt в открытый префикс.');
+  }
+
+  if (esBody?.verdict === 'finishable') {
+    steps.unshift(
+      'Заточить до 20% качества и вставить 2 железные руны по 18% ES; после этого пересчитать итоговый ES.',
+    );
+  }
+
+  if (essenceAdvice) {
+    steps.unshift(
+      `Вариант с гарантией: ${essenceAdvice.name} — ${essenceAdvice.effect}.`,
+      'Альтернатива: Regal — случайный мод, может дать ES-префикс, но без гарантии.',
+    );
+  }
+
   if (item.rarity === 'rare' && profile.mode !== 'waystone' && profile.mode !== 'tablet') {
-    if (counts.bad >= 2) {
-      summary = `Два и более слабых мода. ${summary}`;
+    if (counts.bad >= badLimit) {
+      summary =
+        badLimit >= 2
+          ? `Два и более слабых мода. ${summary}`
+          : `Есть слабый мод. ${summary}`;
       steps = [
-        'Выкинуть: два и более плохих мода — докрафт не оправдан.',
+        badLimit >= 2
+          ? 'Выкинуть: два и более плохих мода — докрафт не оправдан.'
+          : 'Выкинуть: на предмете до 5 аффиксов один плохой мод уже повод не продолжать.',
         'Если база T1/T2 — искать новый экземпляр.',
       ];
     } else {
@@ -1043,13 +1465,17 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
     }
   }
 
-  if (esBody && !(item.rarity === 'rare' && counts.bad >= 2)) {
+  if (esBody && !stopByBad) {
     if (esBody.verdict === 'junk') {
       summary = `ES ${esBody.es}: неликвид для плана «${esBody.planLabel}». ${summary}`;
       steps = [
-        `ES ${esBody.es} < ${esBody.targetEs} для плана «${esBody.planLabel}» — не вкладывать валюту.`,
+        `ES ${esBody.es} ≤ ${esBody.targetEs} для плана «${esBody.planLabel}» — не вкладывать валюту.`,
         'Выкинуть/продать; если база сильная — искать новый base.',
       ];
+    } else if (esBody.verdict === 'incomplete') {
+      summary = `ES ${esBody.es} (префиксов ${prefixes}/3, это не итог). ${summary}`;
+    } else if (esBody.verdict === 'finishable') {
+      summary = `ES ${esBody.es} → прогноз ${esBody.projectedEs} после качества 20% и 2 рун. ${summary}`;
     } else if (esBody.verdict === 'playable') {
       summary = `ES ${esBody.es}: пойдёт для плана «${esBody.planLabel}». ${summary}`;
       steps.unshift(
@@ -1088,5 +1514,16 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
     counts,
     warnings,
     ...(esBody ? { esBody } : {}),
+    ...(essenceAdvice ? { essenceAdvice } : {}),
+    ...(abyssAdvice ? { abyssAdvice } : {}),
+    shortVerdict: buildShortVerdict(
+      item,
+      mods,
+      counts,
+      esBody,
+      abyssAdvice,
+      badLimit,
+      desecratedAlready,
+    ),
   };
 }

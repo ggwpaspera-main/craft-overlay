@@ -308,7 +308,8 @@ function renderAdvice(advice: CraftAdvice): string {
           <span>ES: <b>${advice.esBody.es}</b></span>
           <span>${advice.esBody.baseTierLabel ? `база: ${escapeHtml(advice.esBody.baseTierLabel)}` : 'база вне тиров'}</span>
           <span>${advice.esBody.quality === null ? 'качество: ?' : `качество: ${advice.esBody.quality}%`}</span>
-          <span>руны: ${advice.esBody.runes}/${advice.esBody.sockets}</span>
+          <span>${advice.esBody.runes > 0 ? 'руны: есть' : 'рун: 0'}</span>
+          <span>прогноз: ${advice.esBody.projectedEs}</span>
         </div>
         <div class="advice-es-plan">план: ${escapeHtml(advice.esBody.planLabel)} · цель ES ≥ ${advice.esBody.targetEs}</div>
         <ul>${advice.esBody.checks.map((check) => `<li>${escapeHtml(check)}</li>`).join('')}</ul>

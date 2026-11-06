@@ -306,7 +306,7 @@ function renderItem(item: ParsedItem): void {
         )
       : '';
 
-  show(`
+  const fullHtml = `
     <div class="ov-head">
       <div class="ov-rarity ${rarityClass}">${escapeHtml(RARITY_LABEL[item.rarity] ?? item.rarity)}</div>
       <h1 class="ov-name ${rarityClass}">${escapeHtml(name)}</h1>
@@ -322,7 +322,65 @@ function renderItem(item: ParsedItem): void {
       ${flavour}
       ${description}
     </div>
-  `);
+  `;
+
+  show(`${renderCompact(item, advice)}<div id="ov-details" class="ov-details" hidden>${fullHtml}</div>`);
+
+  const details = document.querySelector<HTMLElement>('#ov-details');
+  const detailsToggle = document.querySelector<HTMLButtonElement>('#ov-details-toggle');
+  detailsToggle?.addEventListener('click', () => {
+    if (!details) return;
+    details.hidden = !details.hidden;
+    detailsToggle.textContent = details.hidden ? 'Подробнее' : 'Скрыть подробности';
+  });
+}
+
+function renderCompact(item: ParsedItem, advice: CraftAdvice | null): string {
+  const verdict = advice?.shortVerdict;
+  const tone = verdict?.tone ?? 'info';
+  const name = item.name ?? item.baseType ?? item.itemClass;
+  const es = advice?.esBody;
+
+  const metrics = es
+    ? `<div class="ov-compact-metrics">
+        <span>ES <b>${es.es}</b></span>
+        <span>${es.baseTierLabel ? escapeHtml(es.baseTierLabel) : 'база вне тиров'}</span>
+        <span>${es.quality === null ? 'качество ?' : `качество ${es.quality}%`}</span>
+        <span>${es.runes > 0 ? 'руны: есть' : 'рун: 0'}</span>
+        <span>прогноз: <b>${es.projectedEs}</b></span>
+      </div>`
+    : advice
+      ? `<div class="ov-compact-metrics"><span>модов: ${advice.mods.length}</span><span>целевых: ${advice.counts.good}</span><span>мусорных: ${advice.counts.bad}</span></div>`
+      : '';
+
+  const keyMods = advice
+    ? advice.mods
+        .filter((mod) => mod.verdict === 'bad' || mod.verdict === 'good')
+        .slice(0, 5)
+        .map(
+          (mod) =>
+            `<div class="ov-keymod ov-keymod-${escapeHtml(mod.verdict)}">
+              <span class="ov-keymod-verdict">${mod.verdict === 'bad' ? 'мусор' : 'ок'}</span>
+              <span>${mod.kind === 'prefix' ? 'P' : 'S'}${mod.tier !== undefined ? ` T${mod.tier}` : ''} ${escapeHtml(mod.text)}</span>
+            </div>`,
+        )
+        .join('')
+    : '';
+
+  return `
+    <div class="ov-compact">
+      <div class="ov-verdict ov-verdict-${escapeHtml(tone)}">
+        <div class="ov-verdict-kicker">Промежуточная оценка</div>
+        <div class="ov-verdict-title">${escapeHtml(verdict?.title ?? 'Разбор предмета')}</div>
+        <div class="ov-verdict-reason">${escapeHtml(verdict?.reason ?? 'Смотри подробности ниже.')}</div>
+        <div class="ov-verdict-action">${escapeHtml(verdict?.action ?? '')}</div>
+      </div>
+      <div class="ov-compact-name">${escapeHtml(name)}</div>
+      ${metrics}
+      ${keyMods ? `<div class="ov-keymods">${keyMods}</div>` : ''}
+      <button id="ov-details-toggle" class="ov-btn ov-details-toggle" type="button">Подробнее</button>
+    </div>
+  `;
 }
 
 function renderAdvice(advice: CraftAdvice): string {
