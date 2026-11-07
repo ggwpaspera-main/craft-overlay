@@ -576,6 +576,30 @@ describe('ES-тушка: пороги ES, качество и руны', () => {
     expect(advice.shortVerdict?.tone).toBe('good');
     expect(advice.shortVerdict?.action).toContain('Regal');
     expect(advice.essenceAdvice?.element).toBe('cold');
+    expect(advice.goal?.baseLabel).toBe('Нечестивое облачение');
+    expect(advice.goal?.baseImage).toBe('assets/vile_robe.webp');
+    expect(advice.goal?.categories.prefixes).toHaveLength(5);
+    expect(advice.goal?.categories.suffixes).toHaveLength(3);
+    expect(advice.goal?.categories.prefixes.find((mod) => mod.label === 'флэт ЭЩ')?.matched).toBe(true);
+    expect(advice.goal?.categories.suffixes.find((mod) => mod.label === 'Все сопротивления')?.matched).toBe(true);
+    expect(advice.goal?.current.prefixes).toHaveLength(1);
+    expect(advice.goal?.current.suffixes).toHaveLength(1);
+  });
+
+  it('goal: мусорный мод попадает в красный блок', () => {
+    const advice = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        modifiers: [
+          group('prefix', '+82 к максимуму энергетического щита', 2),
+          group('prefix', '+20 к максимуму здоровья', 1),
+        ],
+      }),
+    );
+    expect(advice.goal?.trash).toHaveLength(1);
+    expect(advice.goal?.trash[0]?.color).toBe('red');
+    expect(advice.goal?.trash[0]?.trash).toBe(true);
   });
 
   it('второй magic-пример: T12 жизнь — плохой мод, Alchemy/новый base', () => {

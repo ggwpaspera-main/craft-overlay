@@ -21,7 +21,7 @@ await build({
   platform: 'node',
   format: 'cjs',
   target: 'node20',
-  external: ['electron'],
+  external: ['electron', 'uiohook-napi', 'koffi'],
 });
 
 // Preload — CommonJS, contextBridge + ipcRenderer.
@@ -55,9 +55,22 @@ await build({
   target: 'chrome120',
 });
 
+// Окно цели — отдельная карточка с целевыми модами.
+await build({
+  ...common,
+  entryPoints: ['src/renderer/src/goal.ts'],
+  outfile: `${outDir}/renderer/goal.js`,
+  platform: 'browser',
+  format: 'iife',
+  target: 'chrome120',
+});
+
 await cp('src/renderer/index.html', `${outDir}/renderer/index.html`);
 await cp('src/renderer/src/style.css', `${outDir}/renderer/style.css`);
 await cp('src/renderer/overlay.html', `${outDir}/renderer/overlay.html`);
 await cp('src/renderer/src/overlay.css', `${outDir}/renderer/overlay.css`);
+await cp('src/renderer/goal.html', `${outDir}/renderer/goal.html`);
+await cp('src/renderer/goal.css', `${outDir}/renderer/goal.css`);
+await cp('src/renderer/assets', `${outDir}/renderer/assets`, { recursive: true });
 
 console.log('Build complete: out/');

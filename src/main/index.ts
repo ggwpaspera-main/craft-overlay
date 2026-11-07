@@ -1,49 +1,40 @@
 import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, screen, shell } from 'electron';
-import { execFile } from 'node:child_process';
 import { join } from 'node:path';
-import { promisify } from 'node:util';
+import { createNativeInput, type ForegroundSnapshot, type NativeInput } from './native-input';
 
-const CAPTURE_HOTKEY = 'Alt+F';
-const HIDE_OVERLAY_HOTKEY = 'Alt+Shift+F';
+const CAPTURE_HOTKEYS = ['Alt+F'];
+const HIDE_GOAL_HOTKEY = 'Alt+R';
+
+// Оверлей временно отключён, но код окна сохранён.
+const OVERLAY_ENABLED = false;
 
 const OVERLAY_WIDTH = 480;
 const OVERLAY_MAX_HEIGHT = 760;
+const GOAL_WIDTH = 820;
+const GOAL_WIDTH_EXPANDED = 1320;
+const GOAL_HEIGHT = 760;
 
-const execFileAsync = promisify(execFile);
+const GAME_PROCESS_NAMES = new Set([
+  'pathofexilesteam.exe',
+  'pathofexile.exe',
+  'pathofexile2.exe',
+  'pathofexile2steam.exe',
+]);
 
-/**
- * Отправляет в активное окно Ctrl+Alt+C (advanced item copy).
- * Electron не умеет отправлять ввод другим приложениям, поэтому используем
- * Win32 keybd_event через PowerShell. Команда статическая — инъекции нет.
- */
-const SEND_ADVANCED_COPY_SCRIPT = `
-Add-Type -TypeDefinition @"
-using System;
-using System.Runtime.InteropServices;
-public static class CraftOverlayKeyboard {
-  [DllImport("user32.dll")]
-  public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
-}
-"@
-[CraftOverlayKeyboard]::keybd_event(0x11, 0, 0, [UIntPtr]::Zero)
-Start-Sleep -Milliseconds 30
-[CraftOverlayKeyboard]::keybd_event(0x12, 0, 0, [UIntPtr]::Zero)
-Start-Sleep -Milliseconds 30
-[CraftOverlayKeyboard]::keybd_event(0x43, 0, 0, [UIntPtr]::Zero)
-Start-Sleep -Milliseconds 70
-[CraftOverlayKeyboard]::keybd_event(0x43, 0, 2, [UIntPtr]::Zero)
-Start-Sleep -Milliseconds 20
-[CraftOverlayKeyboard]::keybd_event(0x12, 0, 2, [UIntPtr]::Zero)
-Start-Sleep -Milliseconds 20
-[CraftOverlayKeyboard]::keybd_event(0x11, 0, 2, [UIntPtr]::Zero)
-`;
 
 let mainWindow: BrowserWindow | null = null;
 let overlayWindow: BrowserWindow | null = null;
 let overlayReady: Promise<void> | null = null;
+let goalWindow: BrowserWindow | null = null;
+let goalReady: Promise<void> | null = null;
+let goalHasContent = false;
+let goalPositioned = false;
 let captureInProgress = false;
 let lastOverlayText: string | null = null;
 let overlayHasContent = false;
+let clipboardWatcher: NodeJS.Timeout | null = null;
+let lastClipboardText: string | null = null;
+let nativeInput: NativeInput | null = null;
 
 app.setAppUserModelId('com.craftoverlay.app');
 
@@ -181,17 +172,25 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
-async function sendAdvancedCopy(): Promise<void> {
-  if (process.platform !== 'win32') return;
+function isGameWindow(snapshot: ForegroundSnapshot | null): boolean {
+  if (snapshot === null || snapshot.pid <= 0) return false;
+  const processName = snapshot.processName.toLowerCase();
+  if (GAME_PROCESS_NAMES.has(processName)) return true;
+  if (/pathofexile|poe2/i.test(processName)) return true;
+  return /path of exile|path of exile 2/i.test(snapshot.windowTitle);
+}
 
-  // -EncodedCommand избавляет от проблем с кавычками в C#-коде при передаче
-  // аргументов через Windows.
-  const encoded = Buffer.from(SEND_ADVANCED_COPY_SCRIPT, 'utf16le').toString('base64');
-  await execFileAsync(
-    'powershell.exe',
-    ['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-EncodedCommand', encoded],
-    { windowsHide: true, timeout: 5000 },
-  );
+async function waitForHotkeyRelease(input: NativeInput, initial: ForegroundSnapshot): Promise<boolean> {
+  const deadline = Date.now() + 1500;
+  while (input.heldKeys()) {
+    if (Date.now() >= deadline) return false;
+    const current = input.snapshot();
+    if (!current || !isGameWindow(current) || current.pid !== initial.pid || current.hwnd !== initial.hwnd) {
+      return false;
+    }
+    await sleep(25);
+  }
+  return true;
 }
 
 async function waitForCopiedItem(previous: string): Promise<string | null> {
@@ -209,43 +208,193 @@ async function waitForCopiedItem(previous: string): Promise<string | null> {
   return looksLikeItem(current) && current !== previous ? current : null;
 }
 
-async function showOverlay(text: string | null): Promise<void> {
-  const window = await ensureOverlayWindow();
-  lastOverlayText = text;
-  overlayHasContent = true;
-  positionOverlay(window);
-  window.webContents.send('capture:result', text);
+function createGoalWindow(): void {
+  goalWindow = new BrowserWindow({
+    width: GOAL_WIDTH,
+    height: GOAL_HEIGHT,
+    show: false,
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    resizable: false,
+    movable: true,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    focusable: true,
+    hasShadow: false,
+    alwaysOnTop: false,
+    type: 'toolbar',
+    roundedCorners: false,
+    autoHideMenuBar: true,
+    title: 'Цель крафта',
+    webPreferences: {
+      preload: join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+      backgroundThrottling: false,
+    },
+  });
 
-  if (window.isVisible()) {
-    window.moveTop();
-  } else {
-    window.showInactive();
+  goalWindow.setAlwaysOnTop(true, 'screen-saver');
+  goalWindow.setMenuBarVisibility(false);
+  goalWindow.loadFile(join(__dirname, 'renderer/goal.html'));
+
+  goalReady = new Promise((resolve) => {
+    goalWindow?.webContents.once('did-finish-load', () => resolve());
+  });
+
+  goalWindow.on('closed', () => {
+    goalWindow = null;
+    goalReady = null;
+    goalHasContent = false;
+  });
+}
+
+async function ensureGoalWindow(): Promise<BrowserWindow> {
+  if (!goalWindow) createGoalWindow();
+  if (!goalWindow) throw new Error('Не удалось создать окно цели');
+  await goalReady;
+  return goalWindow;
+}
+
+function positionGoalWindow(window: BrowserWindow): void {
+  const cursor = screen.getCursorScreenPoint();
+  const display = screen.getDisplayNearestPoint(cursor);
+  const { workArea } = display;
+  const goalBounds = window.getBounds();
+  const width = goalBounds.width;
+  const height = Math.min(goalBounds.height || GOAL_HEIGHT, workArea.height - 24);
+
+  if (!OVERLAY_ENABLED || !overlayWindow) {
+    const x = Math.max(workArea.x + 8, workArea.x + workArea.width - width - 16);
+    const y = Math.max(workArea.y + 8, workArea.y + workArea.height - height - 16);
+    window.setBounds({ x, y, width, height });
+    return;
   }
 
-  window.setAlwaysOnTop(true, 'screen-saver');
+  const overlayBounds = overlayWindow.getBounds();
+  const baseX = overlayBounds.x;
+  const baseY = overlayBounds.y;
+  const baseWidth = overlayBounds.width;
+  const baseHeight = overlayBounds.height;
+
+  const rightX = baseX + baseWidth + 16;
+  const leftX = baseX - width - 16;
+  let sideX: number | null = null;
+  if (rightX + width <= workArea.x + workArea.width - 8) sideX = rightX;
+  else if (leftX >= workArea.x + 8) sideX = leftX;
+
+  let x: number;
+  let y: number;
+  if (sideX !== null) {
+    x = sideX;
+    y = baseY;
+  } else {
+    x = baseX + Math.round((baseWidth - width) / 2);
+    y = baseY + baseHeight + 12;
+    if (y + height > workArea.y + workArea.height) y = baseY - height - 12;
+    if (y < workArea.y + 8) y = baseY + 42;
+  }
+
+  x = Math.max(workArea.x + 8, Math.min(x, workArea.x + workArea.width - width - 8));
+  y = Math.max(workArea.y + 8, Math.min(y, workArea.y + workArea.height - height - 8));
+
+  window.setBounds({ x: Math.round(x), y: Math.round(y), width, height });
+}
+
+async function sendGoalText(text: string | null): Promise<void> {
+  const window = await ensureGoalWindow();
+  window.webContents.send('capture:result', text);
+  if (!text) {
+    goalHasContent = false;
+    window.hide();
+  }
+}
+
+async function startClipboardWatcher(): Promise<void> {
+  lastClipboardText = await clipboard.readText();
+  clipboardWatcher = setInterval(() => {
+    void (async () => {
+      if (captureInProgress) return;
+      let text = '';
+      try {
+        text = await clipboard.readText();
+      } catch {
+        return;
+      }
+      if (text === lastClipboardText) return;
+      lastClipboardText = text;
+      if (!looksLikeItem(text)) return;
+      console.log('[clipboard] manual item detected');
+      mainWindow?.webContents.send('capture:result', text);
+      await showOverlay(text);
+    })();
+  }, 250);
+}
+
+async function showOverlay(text: string | null): Promise<void> {
+  lastOverlayText = text;
+  overlayHasContent = true;
+  if (text !== null) lastClipboardText = text;
+  await sendGoalText(text);
+  if (!text) {
+    goalWindow?.hide();
+    return;
+  }
+  if (goalHasContent) {
+    if (!goalPositioned) {
+      positionGoalWindow(goalWindow as BrowserWindow);
+      goalPositioned = true;
+    }
+    goalWindow?.showInactive();
+    goalWindow?.setAlwaysOnTop(true, 'screen-saver');
+  }
 }
 
 async function captureItemFromGame(): Promise<void> {
   if (captureInProgress) return;
+  if (!nativeInput) {
+    console.warn('[capture] native input недоступен');
+    return;
+  }
+  const initial = nativeInput.snapshot();
+  if (!initial || !isGameWindow(initial)) {
+    console.log(
+      `[capture] активное окно не игра — отмена: ${initial?.processName ?? 'none'} | ${initial?.windowTitle ?? ''}`,
+    );
+    return;
+  }
+
   captureInProgress = true;
   console.log('[hotkey] pressed');
   let clearedItem: string | null = null;
 
   try {
-    // Важно: окно приложения НЕ показываем и НЕ фокусируем до отправки клавиш,
-    // иначе Ctrl+Alt+C уйдёт в наше окно, а не в игру.
+    // Не показываем и не фокусируем окна до отправки Ctrl+C.
+    const released = await waitForHotkeyRelease(nativeInput, initial);
+    if (!released) {
+      console.log('[capture] клавиши не отпущены или фокус сменился — отмена');
+      return;
+    }
     const previous = await clipboard.readText();
-    // Повторное копирование того же предмета даёт тот же текст: старый предмет
-    // убираем, чтобы заметить новое копирование. Чужой текст в буфере не трогаем.
     if (looksLikeItem(previous)) {
       clearedItem = previous;
       clipboard.clear();
     }
-    await sendAdvancedCopy();
-    console.log('[capture] Ctrl+Alt+C sent');
+    nativeInput.sendCtrlC();
+    console.log('[capture] Ctrl+C sent');
     const text = await waitForCopiedItem(clearedItem === null ? previous : '');
-    console.log(`[capture] clipboard: ${text ? `${text.length} chars` : 'no item'}`);
 
+    const current = nativeInput.snapshot();
+    if (!current || !isGameWindow(current) || current.pid !== initial.pid || current.hwnd !== initial.hwnd) {
+      console.log('[capture] фокус сменился после Ctrl+C — отмена');
+      return;
+    }
+
+    console.log(`[capture] clipboard: ${text ? `${text.length} chars` : 'no item'}`);
     mainWindow?.webContents.send('capture:result', text);
     await showOverlay(text);
   } catch (error) {
@@ -266,7 +415,58 @@ app.whenReady().then(() => {
   ipcMain.on('overlay:hide', () => {
     const wasVisible = overlayWindow?.isVisible();
     overlayWindow?.hide();
+    goalWindow?.hide();
     console.log(`[overlay] hide via titlebar: ${wasVisible} -> ${overlayWindow?.isVisible()}`);
+  });
+  ipcMain.on('goal:available', (event, available: unknown) => {
+    if (!goalWindow || event.sender !== goalWindow.webContents) return;
+    goalHasContent = available === true;
+    if (goalHasContent) {
+      if (!goalPositioned) {
+        positionGoalWindow(goalWindow);
+        goalPositioned = true;
+      }
+      goalWindow.showInactive();
+      goalWindow.setAlwaysOnTop(true, 'screen-saver');
+    } else {
+      goalWindow.hide();
+    }
+  });
+  ipcMain.on('goal:expanded', (event, expanded: unknown) => {
+    if (!goalWindow || event.sender !== goalWindow.webContents) return;
+    const bounds = goalWindow.getBounds();
+    const width = expanded === true ? GOAL_WIDTH_EXPANDED : GOAL_WIDTH;
+    const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+    const { workArea } = display;
+    let x = bounds.x;
+    if (x + width > workArea.x + workArea.width - 8) {
+      x = workArea.x + workArea.width - width - 8;
+    }
+    x = Math.max(workArea.x + 8, x);
+    goalWindow.setBounds({ x, y: bounds.y, width, height: bounds.height });
+  });
+  ipcMain.on('goal:move', (event, dx: unknown, dy: unknown) => {
+    if (!goalWindow || event.sender !== goalWindow.webContents) return;
+    if (typeof dx !== 'number' || typeof dy !== 'number') return;
+    const bounds = goalWindow.getBounds();
+    const display = screen.getDisplayNearestPoint({
+      x: bounds.x + Math.round(bounds.width / 2),
+      y: bounds.y + Math.round(bounds.height / 2),
+    });
+    const { workArea } = display;
+    const x = Math.max(
+      workArea.x + 8,
+      Math.min(bounds.x + Math.round(dx), workArea.x + workArea.width - bounds.width - 8),
+    );
+    const y = Math.max(
+      workArea.y + 8,
+      Math.min(bounds.y + Math.round(dy), workArea.y + workArea.height - bounds.height - 8),
+    );
+    goalWindow.setPosition(x, y);
+  });
+  ipcMain.on('goal:hide', (event) => {
+    if (!goalWindow || event.sender !== goalWindow.webContents) return;
+    goalWindow.hide();
   });
   ipcMain.on('overlay:quit', () => {
     console.log('[overlay] quit via titlebar');
@@ -279,33 +479,34 @@ app.whenReady().then(() => {
   });
 
   createMainWindow();
-  createOverlayWindow();
-
-  const captureRegistered = globalShortcut.register(CAPTURE_HOTKEY, () => {
-    void captureItemFromGame();
-  });
-  if (!captureRegistered) {
-    console.warn(`Не удалось зарегистрировать глобальный хоткей ${CAPTURE_HOTKEY}`);
+  if (OVERLAY_ENABLED) createOverlayWindow();
+  nativeInput = createNativeInput();
+  if (nativeInput) {
+    console.log('[native] uiohook/koffi loaded');
   } else {
-    console.log(`[hotkey] registered ${CAPTURE_HOTKEY}`);
+    console.warn('[native] uiohook/koffi недоступны');
+  }
+  void startClipboardWatcher();
+
+  for (const hotkey of CAPTURE_HOTKEYS) {
+    const registered = globalShortcut.register(hotkey, () => {
+      void captureItemFromGame();
+    });
+    if (!registered) {
+      console.warn(`Не удалось зарегистрировать глобальный хоткей ${hotkey}`);
+    } else {
+      console.log(`[hotkey] registered ${hotkey}`);
+    }
   }
 
-  const hideRegistered = globalShortcut.register(HIDE_OVERLAY_HOTKEY, () => {
-    console.log('[hotkey] hide pressed');
-    if (overlayWindow?.isVisible()) {
-      overlayWindow.hide();
-      console.log('[overlay] hidden');
-      return;
-    }
-    if (overlayHasContent) {
-      void showOverlay(lastOverlayText);
-      console.log('[overlay] shown again');
-    }
+  const hideGoalRegistered = globalShortcut.register(HIDE_GOAL_HOTKEY, () => {
+    console.log('[hotkey] Alt+R hide goal');
+    goalWindow?.hide();
   });
-  if (!hideRegistered) {
-    console.warn(`Не удалось зарегистрировать глобальный хоткей ${HIDE_OVERLAY_HOTKEY}`);
+  if (!hideGoalRegistered) {
+    console.warn(`Не удалось зарегистрировать глобальный хоткей ${HIDE_GOAL_HOTKEY}`);
   } else {
-    console.log(`[hotkey] registered ${HIDE_OVERLAY_HOTKEY}`);
+    console.log(`[hotkey] registered ${HIDE_GOAL_HOTKEY}`);
   }
 
   app.on('activate', () => {
@@ -315,6 +516,7 @@ app.whenReady().then(() => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  if (clipboardWatcher) clearInterval(clipboardWatcher);
 });
 
 app.on('window-all-closed', () => {

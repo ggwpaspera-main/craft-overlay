@@ -20,7 +20,9 @@
   },
   "allowScripts": [
     "esbuild",
-    "electron"
+    "electron",
+    "uiohook-napi",
+    "koffi"
   ],
   "devDependencies": {
     "@types/node": "*",
@@ -40,9 +42,16 @@
     "electronDist": "node_modules/electron/dist",
     "files": [
       "out/**/*",
-      "package.json"
+      "package.json",
+      "THIRD-PARTY-NOTICES.md",
+      "third-party-licenses/**/*"
     ],
     "asar": true,
+    "npmRebuild": false,
+    "asarUnpack": [
+      "node_modules/uiohook-napi/**",
+      "node_modules/koffi/**"
+    ],
     "win": {
       "target": [
         {
@@ -56,5 +65,9 @@
     "portable": {
       "artifactName": "craft-overlay-${version}.exe"
     }
+  },
+  "dependencies": {
+    "koffi": "^2.15.2",
+    "uiohook-napi": "^1.5.5"
   }
 }

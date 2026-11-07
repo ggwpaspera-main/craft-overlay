@@ -6,6 +6,10 @@ contextBridge.exposeInMainWorld('craft', {
   hideOverlay: (): void => ipcRenderer.send('overlay:hide'),
   quitApp: (): void => ipcRenderer.send('overlay:quit'),
   moveOverlay: (dx: number, dy: number): void => ipcRenderer.send('overlay:move', dx, dy),
+  setGoalVisible: (visible: boolean): void => ipcRenderer.send('goal:available', visible),
+  setGoalExpanded: (expanded: boolean): void => ipcRenderer.send('goal:expanded', expanded),
+  moveGoal: (dx: number, dy: number): void => ipcRenderer.send('goal:move', dx, dy),
+  hideGoal: (): void => ipcRenderer.send('goal:hide'),
   onCapture: (callback: (text: string | null) => void): (() => void) => {
     const listener = (_event: IpcRendererEvent, text: string | null): void => callback(text);
     ipcRenderer.on('capture:result', listener);

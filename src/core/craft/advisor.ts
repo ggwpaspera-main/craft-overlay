@@ -135,6 +135,39 @@ export interface EsBodyAdvice {
   checks: string[];
 }
 
+export type GoalColor = 'purple' | 'gray' | 'blue' | 'red';
+
+export interface GoalCategory {
+  kind: 'prefix' | 'suffix';
+  label: string;
+  color: GoalColor;
+  note: string;
+  matched: boolean;
+  items?: string[];
+}
+
+export interface GoalCurrentMod {
+  kind: 'prefix' | 'suffix';
+  text: string;
+  color: GoalColor;
+  trash: boolean;
+}
+
+export interface GoalAdvice {
+  title: string;
+  baseLabel: string;
+  baseImage: string;
+  categories: {
+    prefixes: GoalCategory[];
+    suffixes: GoalCategory[];
+  };
+  current: {
+    prefixes: GoalCurrentMod[];
+    suffixes: GoalCurrentMod[];
+  };
+  trash: GoalCurrentMod[];
+}
+
 export interface CraftAdvice {
   supported: boolean;
   profile: string;
@@ -149,6 +182,7 @@ export interface CraftAdvice {
   shortVerdict?: ShortVerdict;
   essenceAdvice?: EssenceAdvice;
   abyssAdvice?: AbyssAdvice;
+  goal?: GoalAdvice;
 }
 
 interface AdviceProfile {
@@ -1182,6 +1216,132 @@ function buildShortVerdict(
   };
 }
 
+function buildGoalAdvice(
+  item: ParsedItem,
+  mods: AdviceMod[],
+  esItem: boolean,
+): GoalAdvice | undefined {
+  if (!esItem || item.category !== 'armour' || item.subtype !== 'bodyArmour') return undefined;
+
+  const usable = (mod: AdviceMod): boolean => mod.verdict !== 'bad';
+  const has = (predicate: (mod: AdviceMod) => boolean): boolean =>
+    mods.some((mod) => usable(mod) && predicate(mod));
+  const isResistance = (mod: AdviceMod): boolean =>
+    mod.kind === 'suffix' &&
+    (mod.families.includes('resistance') || mod.families.includes('chaosResistance'));
+
+  const baseLabel =
+    resolveFilterBase(item.baseType, item.name)?.entry.ru ??
+    item.baseType ??
+    item.name ??
+    item.itemClass;
+  const baseImage = /нечестивое облачение|vile robe/i.test(baseLabel)
+    ? 'assets/vile_robe.webp'
+    : 'assets/body_es.webp';
+
+  const currentColor = (mod: AdviceMod): GoalColor => {
+    if (mod.verdict === 'bad') return 'red';
+    if (mod.kind === 'prefix') {
+      if (mod.esChannel === 'flat' || mod.esChannel === 'percent') return 'purple';
+      if (mod.esChannel === 'hybrid' || mod.esChannel === 'spirit') return 'gray';
+      if (mod.esChannel === 'hybridLife') return 'blue';
+      return 'gray';
+    }
+    if (isResistance(mod)) return 'purple';
+    if (mod.families.includes('attributes') || mod.families.includes('esRecharge')) return 'blue';
+    return 'gray';
+  };
+
+  const currentPrefixes: GoalCurrentMod[] = mods
+    .filter((mod) => mod.kind === 'prefix' && mod.verdict !== 'bad')
+    .map((mod) => ({ kind: 'prefix', text: mod.text, color: currentColor(mod), trash: false }));
+  const currentSuffixes: GoalCurrentMod[] = mods
+    .filter((mod) => mod.kind === 'suffix' && mod.verdict !== 'bad')
+    .map((mod) => ({ kind: 'suffix', text: mod.text, color: currentColor(mod), trash: false }));
+  const trash: GoalCurrentMod[] = mods
+    .filter((mod) => mod.verdict === 'bad')
+    .map((mod) => ({
+      kind: mod.kind === 'prefix' ? 'prefix' : 'suffix',
+      text: mod.text,
+      color: 'red',
+      trash: true,
+    }));
+
+  return {
+    title: 'Цель крафта',
+    baseLabel,
+    baseImage,
+    categories: {
+      prefixes: [
+        {
+          kind: 'prefix',
+          label: '% ЭЩ',
+          color: 'purple',
+          note: 'крутой мод · фиолетовый тир',
+          matched: has((mod) => mod.esChannel === 'percent'),
+        },
+        {
+          kind: 'prefix',
+          label: 'флэт ЭЩ',
+          color: 'purple',
+          note: 'крутой мод · фиолетовый тир',
+          matched: has((mod) => mod.esChannel === 'flat'),
+        },
+        {
+          kind: 'prefix',
+          label: 'гибрид %ЭЩ + флэт ЭЩ',
+          color: 'gray',
+          note: 'хороший, но нельзя брать вместе с другим модом того же тира · Дымчатый',
+          matched: has((mod) => mod.esChannel === 'hybrid'),
+        },
+        {
+          kind: 'prefix',
+          label: 'дух',
+          color: 'gray',
+          note: 'хороший, но нельзя брать вместе с другим модом того же тира · Дымчатый',
+          matched: has((mod) => mod.esChannel === 'spirit'),
+        },
+        {
+          kind: 'prefix',
+          label: 'гибрид %ЭЩ + флэт ЭЩ',
+          color: 'blue',
+          note: 'средний мод · синий тир · T1–T2',
+          matched: has((mod) => mod.esChannel === 'hybridLife'),
+        },
+      ],
+      suffixes: [
+        {
+          kind: 'suffix',
+          label: 'Все сопротивления',
+          color: 'purple',
+          note: 'огонь · холод · молния · хаос',
+          matched: has(isResistance),
+          items: ['огонь', 'холод', 'молния', 'хаос'],
+        },
+        {
+          kind: 'suffix',
+          label: 'К силе / ловкости / интеллекту',
+          color: 'blue',
+          note: 'средний мод · синий тир',
+          matched: has((mod) => mod.kind === 'suffix' && mod.families.includes('attributes')),
+        },
+        {
+          kind: 'suffix',
+          label: 'Повышение скорости перезарядки ЭЩ',
+          color: 'blue',
+          note: 'средний мод · синий тир',
+          matched: has((mod) => mod.kind === 'suffix' && mod.families.includes('esRecharge')),
+        },
+      ],
+    },
+    current: {
+      prefixes: currentPrefixes,
+      suffixes: currentSuffixes,
+    },
+    trash,
+  };
+}
+
 export function analyzeCraft(item: ParsedItem): CraftAdvice {
   if (item.rarity !== 'normal' && item.rarity !== 'magic' && item.rarity !== 'rare') {
     return unsupported(
@@ -1299,6 +1459,7 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
   const levelText = item.itemLevel !== undefined ? `, ilvl ${item.itemLevel}` : '';
   const esBody = buildEsBodyAdvice(item);
   const essenceAdvice = recommendEssence(item, mods) ?? undefined;
+  const goalAdvice = buildGoalAdvice(item, mods, esItem);
 
   let summary = '';
   let steps: string[] = [];
@@ -1516,6 +1677,7 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
     ...(esBody ? { esBody } : {}),
     ...(essenceAdvice ? { essenceAdvice } : {}),
     ...(abyssAdvice ? { abyssAdvice } : {}),
+    ...(goalAdvice ? { goal: goalAdvice } : {}),
     shortVerdict: buildShortVerdict(
       item,
       mods,
