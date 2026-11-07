@@ -39,6 +39,8 @@ export type ModFamily =
   | 'critChance'
   | 'critMulti'
   | 'esRecharge'
+  | 'deflection'
+  | 'armourElemental'
   | 'thorns'
   | 'stunThreshold'
   | 'ailmentDuration'
@@ -65,7 +67,27 @@ export interface AdviceMod {
   reason: string;
   families: ModFamily[];
   esChannel?: EsChannel;
+  defenceChannel?: DefenceChannel;
 }
+
+export type DefenceStatKey = 'armour' | 'evasion' | 'energyShield';
+
+export type BodyDefenceCategory =
+  | 'armour'
+  | 'evasion'
+  | 'energyShield'
+  | 'armour+evasion'
+  | 'armour+energyShield'
+  | 'evasion+energyShield';
+
+export type DefenceChannel =
+  | 'flat'
+  | 'percent'
+  | 'hybrid'
+  | 'hybridLife'
+  | 'spirit'
+  | 'life';
+
 
 export type EsChannel = 'flat' | 'percent' | 'hybrid' | 'hybridLife' | 'spirit';
 
@@ -135,7 +157,29 @@ export interface EsBodyAdvice {
   checks: string[];
 }
 
+export interface BodyDefenceStatAdvice {
+  key: DefenceStatKey;
+  label: string;
+  current: number;
+  target: number;
+  projected: number;
+}
+
+export interface BodyDefenceAdvice {
+  category: BodyDefenceCategory;
+  label: string;
+  quality: number | null;
+  sockets: number;
+  runes: number;
+  isFinished: boolean;
+  targetLabel: string;
+  verdict: 'junk' | 'finishable' | 'good' | 'unknown';
+  stats: BodyDefenceStatAdvice[];
+  checks: string[];
+}
+
 export type GoalColor = 'purple' | 'gray' | 'blue' | 'red';
+
 
 export interface GoalCategory {
   kind: 'prefix' | 'suffix';
@@ -179,6 +223,7 @@ export interface CraftAdvice {
   counts: AdviceCounts;
   warnings: string[];
   esBody?: EsBodyAdvice;
+  bodyDefence?: BodyDefenceAdvice;
   shortVerdict?: ShortVerdict;
   essenceAdvice?: EssenceAdvice;
   abyssAdvice?: AbyssAdvice;
@@ -239,6 +284,11 @@ const FAMILY_RULES: FamilyRule[] = [
     pattern: /бонусу критического урона|бонуса к критическому урону(?! приспешников)/i,
   },
   { family: 'esRecharge', pattern: /(скорости|начала) перезарядки энергетического щита/i },
+  { family: 'deflection', pattern: /отклонение урона.*уклонения/i },
+  {
+    family: 'armourElemental',
+    pattern: /брони также применяется к получаемому урону от стихий/i,
+  },
   { family: 'stunThreshold', pattern: /оглушени/i },
   { family: 'ailmentDuration', pattern: /длительности (кровотечения|отравления)/i },
   { family: 'attributeRequirements', pattern: /снижение требований к характеристикам/i },
@@ -275,6 +325,79 @@ function familyOf(text: string): ModFamily {
 /** Гибридный мод может давать два целевых семейства сразу. */
 function familiesOfGroup(group: ModifierGroup): ModFamily[] {
   return [...new Set(group.lines.map((line) => familyOf(line.text)).filter((family) => family !== 'unknown'))];
+}
+
+export interface BodyDefenceCategoryInfo {
+  category: BodyDefenceCategory;
+  label: string;
+  stats: DefenceStatKey[];
+}
+
+const DEFENCE_STAT_ORDER: DefenceStatKey[] = ['armour', 'evasion', 'energyShield'];
+
+function bodyDefenceCategoryOf(item: ParsedItem): BodyDefenceCategoryInfo | null {
+  if (item.category !== 'armour' || item.subtype !== 'bodyArmour') return null;
+  const stats = DEFENCE_STAT_ORDER.filter((stat) => numericProperty(item, stat) > 0);
+  if (stats.length < 1 || stats.length > 2) return null;
+  const category = stats.join('+') as BodyDefenceCategory;
+  const labels: Record<BodyDefenceCategory, string> = {
+    armour: 'Броня',
+    evasion: 'Уклонение',
+    energyShield: 'Энергетический щит',
+    'armour+evasion': 'Броня + уклонение',
+    'armour+energyShield': 'Броня + энергетический щит',
+    'evasion+energyShield': 'Уклонение + энергетический щит',
+  };
+  return { category, label: labels[category], stats };
+}
+
+function defenceStatsInText(text: string): DefenceStatKey[] {
+  const lower = text.toLowerCase();
+  const stats: DefenceStatKey[] = [];
+  if (/брон(?:я|и|е|ю)/.test(lower)) stats.push('armour');
+  if (/уклонени(?:е|я|ю)/.test(lower)) stats.push('evasion');
+  if (/энергетическ(?:ого|ий|ому) щит(?:а|у)?/.test(lower)) stats.push('energyShield');
+  return stats;
+}
+
+function defenceInfoOfGroup(group: ModifierGroup): {
+  stats: Set<DefenceStatKey>;
+  flat: boolean;
+  percent: boolean;
+} {
+  const stats = new Set<DefenceStatKey>();
+  let flat = false;
+  let percent = false;
+  for (const line of group.lines) {
+    const lineStats = defenceStatsInText(line.text);
+    const isPercent = /(повышение|увеличение).*(брони|уклонения|энергетического щита)/i.test(
+      line.text,
+    );
+    const isFlat = /к (?:максимуму )?(?:броне|уклонению|энергетическому щиту)/i.test(line.text);
+    if (!isPercent && !isFlat) continue;
+    for (const stat of lineStats) stats.add(stat);
+    if (isPercent) percent = true;
+    if (isFlat) flat = true;
+  }
+  return { stats, flat, percent };
+}
+
+function defenceChannelOfGroup(
+  group: ModifierGroup,
+  targetStats: DefenceStatKey[],
+): DefenceChannel | undefined {
+  const families = familiesOfGroup(group);
+  const info = defenceInfoOfGroup(group);
+  const hasAllTargets = targetStats.every((stat) => info.stats.has(stat));
+  if (hasAllTargets && (info.flat || info.percent)) {
+    if (families.includes('life')) return 'hybridLife';
+    if (info.flat && info.percent) return 'hybrid';
+    if (info.flat) return 'flat';
+    return 'percent';
+  }
+  if (families.includes('spirit')) return 'spirit';
+  if (families.includes('life')) return 'life';
+  return undefined;
 }
 
 /** Три отдельных ES-канала + гибрид с жизнью и дух. */
@@ -453,6 +576,8 @@ function armourProfile(item: ParsedItem): AdviceProfile {
   };
   const slot = slotLabel[item.subtype ?? ''] ?? item.itemClass;
   const hasEs = numericProperty(item, 'energyShield') > 0;
+  const hasArmour = numericProperty(item, 'armour') > 0;
+  const hasEvasion = numericProperty(item, 'evasion') > 0;
   const prefixLabels = hasEs
     ? [`% повышение ${defence}`, `+N к ${defence}`, '+N к духу']
     : [
@@ -482,6 +607,14 @@ function armourProfile(item: ParsedItem): AdviceProfile {
   if (numericProperty(item, 'energyShield') > 0) {
     suffixLabels.push('повышение скорости перезарядки ЭЩ');
     suffixFamilies.push('esRecharge');
+  }
+  if (hasArmour) {
+    suffixLabels.push('% брони также применяется к получаемому урону от стихий');
+    suffixFamilies.push('armourElemental');
+  }
+  if (hasEvasion) {
+    suffixLabels.push('отклонение урона в размере % от уклонения');
+    suffixFamilies.push('deflection');
   }
 
   return equipmentProfile(
@@ -713,6 +846,8 @@ function classify(
   tier: number | undefined,
   esItem: boolean,
   esHasSpirit = false,
+  bodyDefence: BodyDefenceCategoryInfo | null = null,
+  defenceChannel: DefenceChannel | undefined = undefined,
 ): { verdict: AdviceVerdict; reason: string } {
   const family = familyOf(text);
   const allFamilies = families.length > 0 ? families : family === 'unknown' ? [] : [family];
@@ -721,6 +856,33 @@ function classify(
       verdict: 'neutral',
       reason: 'мод не распознан — проверь под свой билд',
     };
+  }
+
+  if (!esItem && bodyDefence && defenceChannel) {
+    if (defenceChannel === 'life') {
+      if (bodyDefence.category === 'armour' && tier !== undefined && tier <= 2) {
+        return { verdict: 'good', reason: `жизнь T${tier} — дымчатый мод для брони` };
+      }
+      return { verdict: 'bad', reason: 'чистая жизнь — мусор для этой базы' };
+    }
+    if (defenceChannel === 'hybridLife') {
+      if (bodyDefence.category === 'armour' || bodyDefence.category === 'armour+evasion' || bodyDefence.category === 'armour+energyShield') {
+        if (tier !== undefined && tier <= 3) {
+          return { verdict: 'good', reason: `% защиты + жизнь T${tier} — фиолетовый целевой гибрид` };
+        }
+        return { verdict: 'bad', reason: '% защиты + жизнь T4+ — мусор' };
+      }
+      return { verdict: 'bad', reason: 'гибрид с жизнью — мусор для этой базы' };
+    }
+    if (defenceChannel === 'spirit') {
+      if (tier !== undefined && tier <= 2) return { verdict: 'good', reason: `дух T${tier} — хороший` };
+      if (tier === 3) return { verdict: 'neutral', reason: 'дух T3 — средний' };
+      return { verdict: 'bad', reason: 'дух T4+ — мусор' };
+    }
+    if (tier !== undefined && tier <= 3) {
+      return { verdict: 'good', reason: `защитный мод T${tier} — хороший` };
+    }
+    return { verdict: 'bad', reason: 'защитный мод T4+ — мусор' };
   }
 
   if (esItem) {
@@ -806,6 +968,109 @@ function runeEsPercent(item: ParsedItem): number {
   return total;
 }
 
+function explicitDefencePercent(item: ParsedItem, stat: DefenceStatKey): number {
+  let total = 0;
+  for (const group of item.modifiers) {
+    if (group.source !== 'explicit') continue;
+    if (group.kind !== 'prefix' && group.kind !== 'suffix') continue;
+    for (const line of group.lines) {
+      if (!/(повышение|увеличение).*(брони|уклонения|энергетического щита)/i.test(line.text)) {
+        continue;
+      }
+      if (!defenceStatsInText(line.text).includes(stat)) continue;
+      total += percentFromLine(line);
+    }
+  }
+  return total;
+}
+
+function runeDefencePercent(item: ParsedItem, stat: DefenceStatKey): number {
+  let total = 0;
+  for (const line of item.runes) {
+    if (!/(повышение|увеличение).*(брони|уклонения|энергетического щита)/i.test(line.text)) {
+      continue;
+    }
+    if (!defenceStatsInText(line.text).includes(stat)) continue;
+    total += percentFromLine(line);
+  }
+  return total;
+}
+
+function defenceStatLabel(stat: DefenceStatKey): string {
+  if (stat === 'armour') return 'броня';
+  if (stat === 'evasion') return 'уклонение';
+  return 'ЭЩ';
+}
+
+function buildBodyDefenceAdvice(
+  item: ParsedItem,
+  category: BodyDefenceCategoryInfo,
+  mods: AdviceMod[],
+): BodyDefenceAdvice | undefined {
+  if (category.category === 'energyShield') return undefined;
+  const quality = item.quality ?? null;
+  const currentQuality = quality ?? 0;
+  const isFinished = currentQuality >= 20 && category.stats.every((stat) => runeDefencePercent(item, stat) >= 36);
+
+  const hasSpirit = mods.some((mod) => mod.defenceChannel === 'spirit');
+  const hasPureLife = category.category === 'armour' && mods.some((mod) => mod.defenceChannel === 'life');
+  const factor = hasSpirit || hasPureLife ? 0.8 : 1;
+
+  const baseTargets: Record<BodyDefenceCategory, Partial<Record<DefenceStatKey, number>>> = {
+    armour: { armour: 2500 },
+    evasion: { evasion: 2400 },
+    energyShield: {},
+    'armour+evasion': { armour: 1500, evasion: 1400 },
+    'armour+energyShield': { armour: 1500, energyShield: 450 },
+    'evasion+energyShield': { evasion: 1400, energyShield: 450 },
+  };
+  const targets = baseTargets[category.category];
+  const checks: string[] = [];
+  const stats: BodyDefenceStatAdvice[] = [];
+  let allProjectedPass = true;
+
+  for (const stat of category.stats) {
+    const current = numericProperty(item, stat);
+    const baseTarget = targets[stat];
+    if (baseTarget === undefined || current <= 0) continue;
+    const target = Math.round(baseTarget * factor);
+    const percent = explicitDefencePercent(item, stat);
+    const currentRune = runeDefencePercent(item, stat);
+    const projected = projectedEs(current, currentQuality, 20, currentRune, 36, percent);
+    const passed = projected > target;
+    allProjectedPass &&= passed;
+    stats.push({ key: stat, label: defenceStatLabel(stat), current, target, projected });
+    checks.push(
+      `${defenceStatLabel(stat)}: ${current} → прогноз ${projected} после 20% и 2 рун; цель > ${target}${passed ? ' — ок' : ' — ниже'}`
+    );
+  }
+
+  if (stats.length === 0) return undefined;
+
+  const verdict: BodyDefenceAdvice['verdict'] = !allProjectedPass
+    ? 'junk'
+    : !isFinished
+      ? 'finishable'
+      : 'good';
+  if (hasSpirit || hasPureLife) checks.push('Порог снижен на 20% — один раз, за дух или жизнь.');
+  if (quality === null) checks.push('Качество не видно — проверь заточку.');
+  else if (quality < 20) checks.push(`Качество ${quality}% < 20%.`);
+  if (!isFinished) checks.push('Нужны 2 руны по 18% (36%) после заточки.');
+
+  return {
+    category: category.category,
+    label: category.label,
+    quality,
+    sockets: item.sockets.length,
+    runes: item.runes.length,
+    isFinished,
+    targetLabel: stats.map((stat) => `${stat.label} > ${stat.target}`).join(' · '),
+    verdict,
+    stats,
+    checks,
+  };
+}
+
 function projectedEs(
   currentEs: number,
   currentQuality: number,
@@ -817,12 +1082,16 @@ function projectedEs(
   const baseMultiplier = 1 + esPercent / 100;
   const denominator = (baseMultiplier + currentRunes / 100) * (1 + currentQuality / 100);
   if (denominator <= 0) return currentEs;
-  const numerator = (baseMultiplier + targetRunes / 100) * (1 + targetQuality / 100);
+  const targetQ = Math.max(currentQuality, targetQuality);
+  const targetR = Math.max(currentRunes, targetRunes);
+  const numerator = (baseMultiplier + targetR / 100) * (1 + targetQ / 100);
   return Math.round((currentEs * numerator) / denominator);
 }
 
 function buildEsBodyAdvice(item: ParsedItem): EsBodyAdvice | undefined {
   if (item.category !== 'armour' || item.subtype !== 'bodyArmour') return undefined;
+  // ES-профиль только для чистой ЭЩ-базы; гибриды оцениваются bodyDefence.
+  if (numericProperty(item, 'armour') > 0 || numericProperty(item, 'evasion') > 0) return undefined;
   const es = numericProperty(item, 'energyShield');
   if (es <= 0) return undefined;
 
@@ -1058,6 +1327,7 @@ function buildShortVerdict(
   mods: AdviceMod[],
   counts: AdviceCounts,
   esBody: EsBodyAdvice | undefined,
+  bodyDefence: BodyDefenceAdvice | undefined,
   abyssAdvice: AbyssAdvice | undefined,
   badLimit: number,
   desecratedAlready: boolean,
@@ -1154,6 +1424,32 @@ function buildShortVerdict(
       action: 'Не продолжать крафт: выкинь / новый base.',
     };
   }
+  if (bodyDefence && item.rarity === 'rare') {
+    if (bodyDefence.verdict === 'junk') {
+      return {
+        tone: 'bad',
+        title: 'Защита ниже порога',
+        reason: `${bodyDefence.targetLabel}; прогноз ниже.`,
+        action: 'Не вкладывать валюту — выкинь/продай.',
+      };
+    }
+    if (bodyDefence.verdict === 'finishable') {
+      return {
+        tone: 'good',
+        title: 'Предмет хороший, но не закончен',
+        reason: `${bodyDefence.targetLabel}; после 20% и 2 рун проходит.`,
+        action: 'Заточить до 20% и вставить 2 руны; моды не трогать.',
+      };
+    }
+    if (bodyDefence.verdict === 'good') {
+      return {
+        tone: 'good',
+        title: 'Предмет хороший',
+        reason: `${bodyDefence.targetLabel}; защита проходит.`,
+        action: 'Предмет готов: моды, качество и руны не трогать.',
+      };
+    }
+  }
   if (esBody?.verdict === 'incomplete') {
     const prefixCount = mods.filter((mod) => mod.kind === 'prefix').length;
     return {
@@ -1216,7 +1512,7 @@ function buildShortVerdict(
   };
 }
 
-function buildGoalAdvice(
+function buildGoalAdviceEs(
   item: ParsedItem,
   mods: AdviceMod[],
   esItem: boolean,
@@ -1342,6 +1638,204 @@ function buildGoalAdvice(
   };
 }
 
+function defenseTargetLabel(stats: DefenceStatKey[]): string {
+  if (stats.length === 1) return stats[0] === 'armour' ? 'броня' : stats[0] === 'evasion' ? 'уклонение' : 'ЭЩ';
+  return stats.map((stat) => (stat === 'armour' ? 'броня' : stat === 'evasion' ? 'уклонение' : 'ЭЩ')).join(' + ');
+}
+
+function goalBaseImage(category: BodyDefenceCategory, baseLabel: string): string {
+  if (/нечестивое облачение|vile robe/i.test(baseLabel)) return 'assets/vile_robe.webp';
+  if (/кираса|cuirass/i.test(baseLabel)) return 'assets/bases/warlord_cuirass.webp';
+  if (/корсар|ловкач|corsair|slipstrike/i.test(baseLabel)) return 'assets/bases/corsair_coat.webp';
+  if (/тана|thane/i.test(baseLabel)) return 'assets/bases/thane_mail.webp';
+  if (/шторм|seastorm/i.test(baseLabel)) return 'assets/bases/seastorm_mantle.webp';
+  if (/дубл|sleek/i.test(baseLabel)) return 'assets/bases/sleek_jacket.webp';
+  if (category === 'armour') return 'assets/bases/warlord_cuirass.webp';
+  if (category === 'evasion') return 'assets/bases/corsair_coat.webp';
+  if (category === 'armour+evasion') return 'assets/bases/thane_mail.webp';
+  if (category === 'armour+energyShield') return 'assets/bases/seastorm_mantle.webp';
+  if (category === 'evasion+energyShield') return 'assets/bases/sleek_jacket.webp';
+  return 'assets/vile_robe.webp';
+}
+
+function buildGoalAdvice(
+  item: ParsedItem,
+  mods: AdviceMod[],
+  body: BodyDefenceCategoryInfo | null,
+): GoalAdvice | undefined {
+  if (!body) return undefined;
+  if (body.category === 'energyShield') return buildGoalAdviceEs(item, mods, true);
+
+  const usable = (mod: AdviceMod): boolean => mod.verdict !== 'bad';
+  const has = (predicate: (mod: AdviceMod) => boolean): boolean =>
+    mods.some((mod) => usable(mod) && predicate(mod));
+  const isResistance = (mod: AdviceMod): boolean =>
+    mod.kind === 'suffix' &&
+    (mod.families.includes('resistance') || mod.families.includes('chaosResistance'));
+  const hasArmour = body.stats.includes('armour');
+  const hasEvasion = body.stats.includes('evasion');
+  const hasEs = body.stats.includes('energyShield');
+  const targetLabel = defenseTargetLabel(body.stats);
+  const baseLabel =
+    resolveFilterBase(item.baseType, item.name)?.entry.ru ??
+    item.baseType ??
+    item.name ??
+    item.itemClass;
+  const baseImage = goalBaseImage(body.category, baseLabel);
+
+  const currentColor = (mod: AdviceMod): GoalColor => {
+    if (mod.verdict === 'bad') return 'red';
+    if (mod.kind === 'prefix') {
+      if (mod.defenceChannel === 'spirit') return 'gray';
+      if (mod.defenceChannel === 'life') {
+        return body.category === 'armour' ? 'gray' : 'red';
+      }
+      if (mod.defenceChannel === 'hybridLife') return hasArmour ? 'purple' : 'red';
+      if (
+        mod.defenceChannel === 'flat' ||
+        mod.defenceChannel === 'percent' ||
+        mod.defenceChannel === 'hybrid'
+      ) {
+        return 'purple';
+      }
+      return 'gray';
+    }
+    if (isResistance(mod) || mod.families.includes('deflection') || mod.families.includes('armourElemental')) {
+      return 'purple';
+    }
+    if (mod.families.includes('attributes') || mod.families.includes('esRecharge')) return 'blue';
+    return 'gray';
+  };
+
+  const currentPrefixes: GoalCurrentMod[] = mods
+    .filter((mod) => mod.kind === 'prefix' && mod.verdict !== 'bad')
+    .map((mod) => ({ kind: 'prefix', text: mod.text, color: currentColor(mod), trash: false }));
+  const currentSuffixes: GoalCurrentMod[] = mods
+    .filter((mod) => mod.kind === 'suffix' && mod.verdict !== 'bad')
+    .map((mod) => ({ kind: 'suffix', text: mod.text, color: currentColor(mod), trash: false }));
+  const trash: GoalCurrentMod[] = mods
+    .filter((mod) => mod.verdict === 'bad')
+    .map((mod) => ({
+      kind: mod.kind === 'prefix' ? 'prefix' : 'suffix',
+      text: mod.text,
+      color: 'red',
+      trash: true,
+    }));
+
+  const prefixes: GoalCategory[] = [
+    {
+      kind: 'prefix',
+      label: `% ${targetLabel}`,
+      color: 'purple',
+      note: 'крутой мод · фиолетовый тир',
+      matched: has((mod) => mod.defenceChannel === 'percent'),
+    },
+    {
+      kind: 'prefix',
+      label: `флэт ${targetLabel}`,
+      color: 'purple',
+      note: 'крутой мод · фиолетовый тир',
+      matched: has((mod) => mod.defenceChannel === 'flat'),
+    },
+    {
+      kind: 'prefix',
+      label: `гибрид флэт + % ${targetLabel}`,
+      color: 'purple',
+      note: 'крутой мод · фиолетовый тир',
+      matched: has((mod) => mod.defenceChannel === 'hybrid'),
+    },
+    ...(hasArmour
+      ? [
+          {
+            kind: 'prefix' as const,
+            label: `% ${targetLabel} + жизнь`,
+            color: 'purple' as const,
+            note: 'фиолетовый целевой гибрид, порог не снижает',
+            matched: has((mod) => mod.defenceChannel === 'hybridLife'),
+          },
+        ]
+      : []),
+    {
+      kind: 'prefix',
+      label: 'дух',
+      color: 'gray',
+      note: 'хороший, но нельзя брать вместе с другим модом того же тира · Дымчатый',
+      matched: has((mod) => mod.defenceChannel === 'spirit'),
+    },
+    ...(body.category === 'armour'
+      ? [
+          {
+            kind: 'prefix' as const,
+            label: 'жизнь T1–T2',
+            color: 'gray' as const,
+            note: 'дымчатый мод только для чистой брони',
+            matched: has((mod) => mod.defenceChannel === 'life'),
+          },
+        ]
+      : []),
+  ];
+
+  const suffixes: GoalCategory[] = [
+    {
+      kind: 'suffix',
+      label: 'Все сопротивления',
+      color: 'purple',
+      note: 'огонь · холод · молния · хаос',
+      matched: has(isResistance),
+      items: ['огонь', 'холод', 'молния', 'хаос'],
+    },
+    {
+      kind: 'suffix',
+      label: 'К силе / ловкости / интеллекту',
+      color: 'blue',
+      note: 'средний мод · синий тир',
+      matched: has((mod) => mod.kind === 'suffix' && mod.families.includes('attributes')),
+    },
+    ...(hasEs
+      ? [
+          {
+            kind: 'suffix' as const,
+            label: 'Повышение скорости перезарядки ЭЩ',
+            color: 'blue' as const,
+            note: 'средний мод · синий тир',
+            matched: has((mod) => mod.kind === 'suffix' && mod.families.includes('esRecharge')),
+          },
+        ]
+      : []),
+    ...(hasEvasion
+      ? [
+          {
+            kind: 'suffix' as const,
+            label: 'Отклонение урона от уклонения',
+            color: 'purple' as const,
+            note: 'целевой суффикс · T1–T3',
+            matched: has((mod) => mod.kind === 'suffix' && mod.families.includes('deflection')),
+          },
+        ]
+      : []),
+    ...(hasArmour
+      ? [
+          {
+            kind: 'suffix' as const,
+            label: 'Броня применяется к стихийному урону',
+            color: 'purple' as const,
+            note: 'целевой суффикс · T1–T3',
+            matched: has((mod) => mod.kind === 'suffix' && mod.families.includes('armourElemental')),
+          },
+        ]
+      : []),
+  ];
+
+  return {
+    title: 'Цель крафта',
+    baseLabel,
+    baseImage,
+    categories: { prefixes, suffixes },
+    current: { prefixes: currentPrefixes, suffixes: currentSuffixes },
+    trash,
+  };
+}
+
 export function analyzeCraft(item: ParsedItem): CraftAdvice {
   if (item.rarity !== 'normal' && item.rarity !== 'magic' && item.rarity !== 'rare') {
     return unsupported(
@@ -1361,7 +1855,8 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
       modifier.source === 'explicit' &&
       (modifier.kind === 'prefix' || modifier.kind === 'suffix'),
   );
-  const esItem = item.category === 'armour' && numericProperty(item, 'energyShield') > 0;
+  const bodyDefence = bodyDefenceCategoryOf(item);
+  const esItem = bodyDefence?.category === 'energyShield';
   const esHasSpirit =
     esItem &&
     groups.some(
@@ -1373,7 +1868,20 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
     const kind = group.kind === 'prefix' ? 'prefix' : 'suffix';
     const text = groupText(group);
     const families = familiesOfGroup(group);
-    const result = classify(kind, text, profile, families, group.tier, esItem, esHasSpirit);
+    const defenceChannel = bodyDefence
+      ? defenceChannelOfGroup(group, bodyDefence.stats)
+      : undefined;
+    const result = classify(
+      kind,
+      text,
+      profile,
+      families,
+      group.tier,
+      esItem,
+      esHasSpirit,
+      bodyDefence,
+      defenceChannel,
+    );
     const esChannel = esItem ? esChannelOf(families) : undefined;
     return {
       kind,
@@ -1383,6 +1891,7 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
       reason: result.reason,
       families,
       ...(esChannel ? { esChannel } : {}),
+      ...(defenceChannel ? { defenceChannel } : {}),
     };
   });
 
@@ -1410,7 +1919,7 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
     item.flags.desecrated === true ||
     groups.some((group) => group.states.includes('desecrated'));
   const abyssAdvice: AbyssAdvice | undefined =
-    esItem &&
+    bodyDefence !== null &&
     item.rarity === 'rare' &&
     prefixes < 3 &&
     counts.bad < badLimit &&
@@ -1458,8 +1967,9 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
   const baseLabel = item.name ?? item.baseType ?? item.itemClass;
   const levelText = item.itemLevel !== undefined ? `, ilvl ${item.itemLevel}` : '';
   const esBody = buildEsBodyAdvice(item);
+  const bodyDefenceAdvice = bodyDefence ? buildBodyDefenceAdvice(item, bodyDefence, mods) : undefined;
   const essenceAdvice = recommendEssence(item, mods) ?? undefined;
-  const goalAdvice = buildGoalAdvice(item, mods, esItem);
+  const goalAdvice = buildGoalAdvice(item, mods, bodyDefence);
 
   let summary = '';
   let steps: string[] = [];
@@ -1675,6 +2185,7 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
     counts,
     warnings,
     ...(esBody ? { esBody } : {}),
+    ...(bodyDefenceAdvice ? { bodyDefence: bodyDefenceAdvice } : {}),
     ...(essenceAdvice ? { essenceAdvice } : {}),
     ...(abyssAdvice ? { abyssAdvice } : {}),
     ...(goalAdvice ? { goal: goalAdvice } : {}),
@@ -1683,6 +2194,7 @@ export function analyzeCraft(item: ParsedItem): CraftAdvice {
       mods,
       counts,
       esBody,
+      bodyDefenceAdvice,
       abyssAdvice,
       badLimit,
       desecratedAlready,

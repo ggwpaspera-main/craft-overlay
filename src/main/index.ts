@@ -309,9 +309,35 @@ async function sendGoalText(text: string | null): Promise<void> {
   const window = await ensureGoalWindow();
   window.webContents.send('capture:result', text);
   if (!text) {
-    goalHasContent = false;
-    window.hide();
+    hideGoalWindow();
   }
+}
+
+function showGoalWindow(): void {
+  if (!goalWindow) return;
+  if (!goalPositioned) {
+    positionGoalWindow(goalWindow);
+    goalPositioned = true;
+  }
+  goalWindow.setOpacity(1);
+  goalWindow.setIgnoreMouseEvents(false);
+  if (!goalWindow.isVisible()) {
+    goalWindow.showInactive();
+  }
+  goalWindow.setAlwaysOnTop(true, 'screen-saver');
+  // moveTop без активации поднимает окно над игрой. Это важно после
+  // нескольких циклов Alt+F → Alt+R: hide/showInactive на Windows может
+  // оставить topmost-окно за игрой.
+  goalWindow.moveTop();
+}
+
+function hideGoalWindow(): void {
+  if (!goalWindow) return;
+  // Не hide(): после повторного showInactive неактивируемое topmost-окно
+  // иногда перестаёт подниматься над игрой. Прозрачность сохраняет
+  // window state и гарантированно прячет его без потери z-order.
+  goalWindow.setOpacity(0);
+  goalWindow.setIgnoreMouseEvents(true, { forward: true });
 }
 
 async function startClipboardWatcher(): Promise<void> {
@@ -341,17 +367,10 @@ async function showOverlay(text: string | null): Promise<void> {
   if (text !== null) lastClipboardText = text;
   await sendGoalText(text);
   if (!text) {
-    goalWindow?.hide();
+    hideGoalWindow();
     return;
   }
-  if (goalHasContent) {
-    if (!goalPositioned) {
-      positionGoalWindow(goalWindow as BrowserWindow);
-      goalPositioned = true;
-    }
-    goalWindow?.showInactive();
-    goalWindow?.setAlwaysOnTop(true, 'screen-saver');
-  }
+  if (goalHasContent) showGoalWindow();
 }
 
 async function captureItemFromGame(): Promise<void> {
@@ -415,21 +434,16 @@ app.whenReady().then(() => {
   ipcMain.on('overlay:hide', () => {
     const wasVisible = overlayWindow?.isVisible();
     overlayWindow?.hide();
-    goalWindow?.hide();
+    hideGoalWindow();
     console.log(`[overlay] hide via titlebar: ${wasVisible} -> ${overlayWindow?.isVisible()}`);
   });
   ipcMain.on('goal:available', (event, available: unknown) => {
     if (!goalWindow || event.sender !== goalWindow.webContents) return;
     goalHasContent = available === true;
     if (goalHasContent) {
-      if (!goalPositioned) {
-        positionGoalWindow(goalWindow);
-        goalPositioned = true;
-      }
-      goalWindow.showInactive();
-      goalWindow.setAlwaysOnTop(true, 'screen-saver');
+      showGoalWindow();
     } else {
-      goalWindow.hide();
+      hideGoalWindow();
     }
   });
   ipcMain.on('goal:expanded', (event, expanded: unknown) => {
@@ -466,7 +480,7 @@ app.whenReady().then(() => {
   });
   ipcMain.on('goal:hide', (event) => {
     if (!goalWindow || event.sender !== goalWindow.webContents) return;
-    goalWindow.hide();
+    hideGoalWindow();
   });
   ipcMain.on('overlay:quit', () => {
     console.log('[overlay] quit via titlebar');
@@ -501,7 +515,7 @@ app.whenReady().then(() => {
 
   const hideGoalRegistered = globalShortcut.register(HIDE_GOAL_HOTKEY, () => {
     console.log('[hotkey] Alt+R hide goal');
-    goalWindow?.hide();
+    hideGoalWindow();
   });
   if (!hideGoalRegistered) {
     console.warn(`Не удалось зарегистрировать глобальный хоткей ${HIDE_GOAL_HOTKEY}`);

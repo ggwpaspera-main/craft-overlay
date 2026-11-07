@@ -82,6 +82,7 @@ let expanded = false;
 function renderVerdict(advice: CraftAdvice): string {
   const verdict = advice.shortVerdict;
   const es = advice.esBody;
+  const body = advice.bodyDefence;
   if (!verdict) return '';
   const metrics = es
     ? `<div class="goal-verdict-metrics">
@@ -89,7 +90,18 @@ function renderVerdict(advice: CraftAdvice): string {
         <span>${es.quality === null ? 'качество ?' : `качество ${es.quality}%`}</span>
         <span>${es.runes > 0 ? 'руны есть' : 'рун нет'}</span>
       </div>`
-    : '';
+    : body
+      ? `<div class="goal-verdict-metrics">
+          ${body.stats
+            .map(
+              (stat) =>
+                `<span>${escapeHtml(stat.label)} <b>${stat.current}</b> → ${stat.projected} / ${stat.target}</span>`,
+            )
+            .join('')}
+          <span>${body.quality === null ? 'качество ?' : `качество ${body.quality}%`}</span>
+          <span>${body.runes > 0 ? 'руны есть' : 'рун нет'}</span>
+        </div>`
+      : '';
   return `
     <div class="goal-verdict goal-verdict-${verdict.tone}">
       <div class="goal-verdict-kicker">Промежуточная оценка</div>
@@ -103,9 +115,12 @@ function renderVerdict(advice: CraftAdvice): string {
 
 function renderDetails(advice: CraftAdvice): string {
   const es = advice.esBody;
+  const body = advice.bodyDefence;
   const checks = es?.checks.length
     ? `<ul class="goal-details-list">${es.checks.map((check) => `<li>${escapeHtml(check)}</li>`).join('')}</ul>`
-    : '';
+    : body?.checks.length
+      ? `<ul class="goal-details-list">${body.checks.map((check) => `<li>${escapeHtml(check)}</li>`).join('')}</ul>`
+      : '';
   const steps = advice.steps.length
     ? `<ul class="goal-details-list">${advice.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join('')}</ul>`
     : '';

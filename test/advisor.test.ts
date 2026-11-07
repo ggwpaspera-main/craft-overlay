@@ -397,6 +397,203 @@ describe('ES-тушка: пороги ES, качество и руны', () => {
     expect(advice.shortVerdict?.action).not.toContain('осталось');
   });
 
+  it('броня: дух снижает порог 2500 → 2000', () => {
+    const advice = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        properties: [{ key: 'armour', label: 'Броня', values: ['1800'] }],
+        modifiers: [
+          group('prefix', '100% повышение брони', 2),
+          group('prefix', '+60 к духу', 2),
+        ],
+      }),
+    );
+    expect(advice.bodyDefence?.targetLabel).toContain('2000');
+    expect(advice.bodyDefence?.verdict).toBe('finishable');
+    expect(advice.shortVerdict?.tone).toBe('good');
+  });
+
+  it('броня: life T1 — хороший, на броня+уклонение life — мусор', () => {
+    const armour = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        properties: [{ key: 'armour', label: 'Броня', values: ['1600'] }],
+        modifiers: [
+          group('prefix', '100% повышение брони', 2),
+          group('prefix', '+30 к максимуму здоровья', 1),
+        ],
+      }),
+    );
+    expect(armour.mods.find((mod) => mod.text.includes('здоровья'))?.verdict).toBe('good');
+
+    const hybrid = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        properties: [
+          { key: 'armour', label: 'Броня', values: ['1200'] },
+          { key: 'evasion', label: 'Уклонение', values: ['1100'] },
+        ],
+        modifiers: [
+          group('prefix', '100% повышение брони и уклонения', 2),
+          group('prefix', '+30 к максимуму здоровья', 1),
+        ],
+      }),
+    );
+    expect(hybrid.mods.find((mod) => mod.text.includes('здоровья'))?.verdict).toBe('bad');
+  });
+
+  it('гибрид броня+уклонение: оба порога проверяются одновременно', () => {
+    const advice = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        properties: [
+          { key: 'armour', label: 'Броня', values: ['1400'] },
+          { key: 'evasion', label: 'Уклонение', values: ['1300'] },
+        ],
+        modifiers: [
+          group('prefix', '100% повышение брони и уклонения', 2),
+          multiGroup('prefix', ['+150 к броне', '+142 к уклонению'], 2),
+        ],
+      }),
+    );
+    expect(advice.bodyDefence?.stats.map((stat) => stat.target)).toEqual([1500, 1400]);
+    expect(advice.bodyDefence?.verdict).toBe('finishable');
+  });
+
+  it('броня+ЭЩ и уклонение+ЭЩ: оба порога', () => {
+    const aes = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        properties: [
+          { key: 'armour', label: 'Броня', values: ['1400'] },
+          { key: 'energyShield', label: 'Энергетический щит', values: ['400'] },
+        ],
+        modifiers: [group('prefix', '100% повышение брони и энергетического щита', 2)],
+      }),
+    );
+    expect(aes.bodyDefence?.targetLabel).toBe('броня > 1500 · ЭЩ > 450');
+
+    const ees = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        properties: [
+          { key: 'evasion', label: 'Уклонение', values: ['1300'] },
+          { key: 'energyShield', label: 'Энергетический щит', values: ['400'] },
+        ],
+        modifiers: [group('prefix', '100% увеличение уклонения и энергетического щита', 2)],
+      }),
+    );
+    expect(ees.bodyDefence?.targetLabel).toBe('уклонение > 1400 · ЭЩ > 450');
+  });
+
+  it('гибрид: дух снижает оба порога на 20%, скидка одна', () => {
+    const advice = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        properties: [
+          { key: 'armour', label: 'Броня', values: ['1400'] },
+          { key: 'evasion', label: 'Уклонение', values: ['1300'] },
+        ],
+        modifiers: [
+          group('prefix', '100% повышение брони и уклонения', 2),
+          group('prefix', '+60 к духу', 2),
+          group('prefix', '+30 к максимуму здоровья', 1),
+        ],
+      }),
+    );
+    expect(advice.bodyDefence?.targetLabel).toBe('броня > 1200 · уклонение > 1120');
+  });
+
+  it('броня+ЭЩ: чистая жизнь — мусор, %защиты+жизнь — целевой гибрид', () => {
+    const pureLife = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        properties: [
+          { key: 'armour', label: 'Броня', values: ['1400'] },
+          { key: 'energyShield', label: 'Энергетический щит', values: ['400'] },
+        ],
+        modifiers: [
+          group('prefix', '100% повышение брони и энергетического щита', 2),
+          group('prefix', '+30 к максимуму здоровья', 1),
+        ],
+      }),
+    );
+    expect(pureLife.mods.find((mod) => mod.text.includes('здоровья'))?.verdict).toBe('bad');
+
+    const hybridLife = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        properties: [
+          { key: 'armour', label: 'Броня', values: ['1400'] },
+          { key: 'energyShield', label: 'Энергетический щит', values: ['400'] },
+        ],
+        modifiers: [
+          multiGroup(
+            'prefix',
+            ['35% повышение брони и энергетического щита', '+30 к максимуму здоровья'],
+            2,
+          ),
+        ],
+      }),
+    );
+    expect(hybridLife.mods[0]?.verdict).toBe('good');
+  });
+
+  it('deflection и armour-to-elemental — целевые суффиксы', () => {
+    const evasion = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        properties: [{ key: 'evasion', label: 'Уклонение', values: ['1900'] }],
+        modifiers: [group('suffix', 'Дарует отклонение урона в размере 25% от уклонения', 2)],
+      }),
+    );
+    expect(evasion.mods[0]?.verdict).toBe('good');
+    expect(evasion.goal?.categories.suffixes.some((item) => item.label.includes('Отклонение'))).toBe(true);
+
+    const armour = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        properties: [{ key: 'armour', label: 'Броня', values: ['1600'] }],
+        modifiers: [group('suffix', '45% брони также применяется к получаемому урону от стихий', 2)],
+      }),
+    );
+    expect(armour.mods[0]?.verdict).toBe('good');
+  });
+
+  it('гибрид %защиты+жизнь — фиолетовый целевой, но не снижает порог', () => {
+    const advice = analyzeCraft(
+      makeItem({
+        ...base,
+        rarity: 'rare',
+        properties: [
+          { key: 'armour', label: 'Броня', values: ['1200'] },
+          { key: 'evasion', label: 'Уклонение', values: ['1100'] },
+        ],
+        modifiers: [
+          multiGroup(
+            'prefix',
+            ['35% повышение брони и уклонения', '+30 к максимуму здоровья'],
+            2,
+          ),
+        ],
+      }),
+    );
+    expect(advice.mods[0]?.verdict).toBe('good');
+    expect(advice.bodyDefence?.targetLabel).toContain('1500');
+    expect(advice.goal?.categories.prefixes.some((item) => item.label.includes('+ жизнь'))).toBe(true);
+  });
+
   it('ES: жизнь любого тира — мусор', () => {
     const advice = analyzeCraft(
       makeItem({

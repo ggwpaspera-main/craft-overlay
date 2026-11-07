@@ -1,0 +1,122 @@
+﻿{
+    "source":  "poe2-craft-guide/bases.html + data/bases.json; снимок 2026-11-07",
+    "categories":  [
+                       {
+                           "id":  "armour",
+                           "label":  "Броня",
+                           "base":  {
+                                        "ru":  "Кираса вождя",
+                                        "en":  "Warlord Cuirass",
+                                        "image":  "assets/bases/warlord_cuirass.webp",
+                                        "stats":  {
+                                                      "armour":  496
+                                                  },
+                                        "implicit":  "+(15–25)% брони также применяется к получаемому урону от стихий",
+                                        "requirements":  "Уровень 80, 121 Сила",
+                                        "movementSpeed":  -5
+                                    },
+                           "variant":  {
+                                           "ru":  "Солдатская кираса",
+                                           "en":  "Soldier Cuirass",
+                                           "image":  "assets/bases/warlord_cuirass.webp",
+                                           "stats":  {
+                                                         "armour":  570
+                                                     },
+                                           "implicit":  null,
+                                           "requirements":  "Уровень 65, 121 Сила",
+                                           "movementSpeed":  -5,
+                                           "note":  "больше брони, но без имплисита на стихийный урон"
+                                       }
+                       },
+                       {
+                           "id":  "evasion",
+                           "label":  "Уклонение",
+                           "base":  {
+                                        "ru":  "Плащ корсара",
+                                        "en":  "Corsair Coat",
+                                        "image":  "assets/bases/corsair_coat.webp",
+                                        "stats":  {
+                                                      "evasion":  451
+                                                  },
+                                        "implicit":  "5% повышение скорости передвижения",
+                                        "requirements":  "Уровень 80, 121 Ловкость",
+                                        "movementSpeed":  -3
+                                    },
+                           "variant":  {
+                                           "ru":  "Нагрудник ловкача",
+                                           "en":  "Slipstrike Vest",
+                                           "image":  "assets/bases/corsair_coat.webp",
+                                           "stats":  {
+                                                         "evasion":  519
+                                                     },
+                                           "implicit":  null,
+                                           "requirements":  "Уровень 70, 121 Ловкость",
+                                           "movementSpeed":  -3,
+                                           "note":  "больше уклонения, но без имплисита на скорость передвижения"
+                                       }
+                       },
+                       {
+                           "id":  "energyShield",
+                           "label":  "Энергетический щит",
+                           "base":  {
+                                        "ru":  "Нечестивое облачение",
+                                        "en":  "Vile Robe",
+                                        "image":  "assets/bases/vile_robe.webp",
+                                        "stats":  {
+                                                      "energyShield":  171
+                                                  },
+                                        "implicit":  null,
+                                        "requirements":  "Уровень 65, 121 Интеллект",
+                                        "movementSpeed":  -3
+                                    }
+                       },
+                       {
+                           "id":  "armour+evasion",
+                           "label":  "Броня + уклонение",
+                           "base":  {
+                                        "ru":  "Кольчуга тана",
+                                        "en":  "Thane Mail",
+                                        "image":  "assets/bases/thane_mail.webp",
+                                        "stats":  {
+                                                      "armour":  273,
+                                                      "evasion":  248
+                                                  },
+                                        "implicit":  "(15–25)% уменьшение дополнительного критического урона от ударов по вам",
+                                        "requirements":  "Уровень 80, 67 Сила, 67 Ловкость",
+                                        "movementSpeed":  -4
+                                    }
+                       },
+                       {
+                           "id":  "armour+energyShield",
+                           "label":  "Броня + энергетический щит",
+                           "base":  {
+                                        "ru":  "Мантия шторма",
+                                        "en":  "Seastorm Mantle",
+                                        "image":  "assets/bases/seastorm_mantle.webp",
+                                        "stats":  {
+                                                      "armour":  273,
+                                                      "energyShield":  76
+                                                  },
+                                        "implicit":  "(8–14)% полученного урона восполняется в виде здоровья",
+                                        "requirements":  "Уровень 80, 67 Сила, 67 Интеллект",
+                                        "movementSpeed":  -4
+                                    }
+                       },
+                       {
+                           "id":  "evasion+energyShield",
+                           "label":  "Уклонение + энергетический щит",
+                           "base":  {
+                                        "ru":  "Дублёный плащ",
+                                        "en":  "Sleek Jacket",
+                                        "image":  "assets/bases/sleek_jacket.webp",
+                                        "stats":  {
+                                                      "evasion":  285,
+                                                      "energyShield":  87
+                                                  },
+                                        "implicit":  null,
+                                        "requirements":  "Уровень 65, 67 Ловкость, 67 Интеллект",
+                                        "movementSpeed":  -3
+                                    }
+                       }
+                   ]
+}
